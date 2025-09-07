@@ -378,13 +378,24 @@ Réponds en JSON avec cette structure:
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
+    }
+    
     const aiContent = data.choices[0].message.content;
     
     try {
       return JSON.parse(aiContent);
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', parseError);
+      console.error('AI response content:', aiContent);
       throw parseError;
     }
 

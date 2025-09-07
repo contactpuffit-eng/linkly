@@ -49,13 +49,11 @@ export default function VendorProducts() {
 
   const fetchProducts = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
-
+      // Fetch all products without auth requirement
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('vendor_id', user.user.id)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -51,17 +50,18 @@ const menuItems = [
 export function VendorSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { profile, signOut } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  // Mock profile data
+  const profile = {
+    name: 'Vendeur Demo',
+    avatar_url: null
+  };
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-muted text-primary font-medium' : 'hover:bg-muted/50';
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   return (
     <Sidebar className={collapsed ? 'w-14' : 'w-64'} collapsible="icon">
@@ -110,9 +110,11 @@ export function VendorSidebar() {
             <Settings className="mr-2 h-4 w-4" />
             {!collapsed && 'Paramètres'}
           </Button>
-          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            {!collapsed && 'Déconnexion'}
+          <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+            <Link to="/">
+              <LogOut className="mr-2 h-4 w-4" />
+              {!collapsed && 'Retour accueil'}
+            </Link>
           </Button>
         </div>
       </SidebarContent>

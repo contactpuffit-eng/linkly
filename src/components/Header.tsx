@@ -1,17 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/useAuth";
 import { Link, useNavigate } from "react-router-dom";
-import { Link2, Users, Store, TrendingUp, LogIn, UserPlus } from "lucide-react";
+import { Link2, Users, Store, TrendingUp } from "lucide-react";
 
 const Header = () => {
-  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -36,47 +29,24 @@ const Header = () => {
           <a href="#demo" className="transition-colors hover:text-foreground/80 text-foreground/60">
             Démo
           </a>
-          {user && (
-            <>
-              <Link to="/vendor" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Dashboard Vendeur
-              </Link>
-              <Link to="/affiliate" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Dashboard Affilié
-              </Link>
-            </>
-          )}
+          <Link to="/vendor" className="transition-colors hover:text-foreground/80 text-foreground/60">
+            Dashboard Vendeur
+          </Link>
+          <Link to="/affiliate" className="transition-colors hover:text-foreground/80 text-foreground/60">
+            Dashboard Affilié
+          </Link>
           <Link to="/@sarahmarketingdz" className="transition-colors hover:text-foreground/80 text-foreground/60">
             Link-in-bio
           </Link>
         </nav>
 
         <div className="ml-auto flex items-center space-x-4">
-          {user ? (
-            <div className="flex items-center space-x-4">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/dashboard">Dashboard</Link>
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                Déconnexion
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-4">
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/auth">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Connexion
-                </Link>
-              </Button>
-              <Button asChild size="sm" className="bg-gradient-primary hover:opacity-90 transition-opacity">
-                <Link to="/auth">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  S'inscrire
-                </Link>
-              </Button>
-            </div>
-          )}
+          <Button asChild variant="outline" size="sm">
+            <Link to="/vendor">Espace Vendeur</Link>
+          </Button>
+          <Button asChild size="sm" className="bg-gradient-primary hover:opacity-90 transition-opacity">
+            <Link to="/affiliate">Espace Affilié</Link>
+          </Button>
         </div>
       </div>
     </header>

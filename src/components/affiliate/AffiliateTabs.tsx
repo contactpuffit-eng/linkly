@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Package, Link2, User, Wallet, Settings, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface AffiliateTabsProps {
   children: React.ReactNode;
@@ -12,10 +12,10 @@ interface AffiliateTabsProps {
 }
 
 export function AffiliateTabs({ children, activeTab, onTabChange }: AffiliateTabsProps) {
-  const { profile, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
+  // Mock profile data
+  const profile = {
+    name: 'Affilié Demo',
+    avatar_url: null
   };
 
   return (
@@ -24,9 +24,11 @@ export function AffiliateTabs({ children, activeTab, onTabChange }: AffiliateTab
       <div className="border-b bg-card">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Linkly
-            </h1>
+            <Link to="/">
+              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Linkly
+              </h1>
+            </Link>
             <div className="h-6 w-px bg-border" />
             <span className="text-sm text-muted-foreground">Dashboard Affilié</span>
           </div>
@@ -42,8 +44,10 @@ export function AffiliateTabs({ children, activeTab, onTabChange }: AffiliateTab
               <p className="text-sm font-medium">{profile?.name}</p>
               <p className="text-xs text-muted-foreground">Affilié</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" />
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/">
+                <LogOut className="w-4 h-4" />
+              </Link>
             </Button>
           </div>
         </div>

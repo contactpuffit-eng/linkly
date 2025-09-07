@@ -52,13 +52,7 @@ export function PublishStep({ formData, updateFormData }: Props) {
       const safePrice = Math.min(Math.max(formData.price, 0), 999999999);
       const safeCommission = Math.min(Math.max(commissionPct, 0), 100);
 
-      // Obtenir l'utilisateur connecté
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) {
-        throw new Error('Vous devez être connecté pour publier un produit');
-      }
-
-      // Sauvegarder le produit en base
+      // Sauvegarder le produit en base (sans utilisateur connecté)
       const { data: product, error } = await supabase
         .from('products')
         .insert({
@@ -67,7 +61,7 @@ export function PublishStep({ formData, updateFormData }: Props) {
           price: safePrice,
           commission_pct: safeCommission,
           category: 'other' as const,
-          vendor_id: user.user.id,
+          vendor_id: '00000000-0000-0000-0000-000000000000', // ID par défaut pour la démo
           media_url: formData.images.find(img => img.isCover)?.url || formData.images[0]?.url || null,
           is_active: true
         })
