@@ -36,28 +36,53 @@ export function PublishStep({ formData, updateFormData }: Props) {
     setIsPublishing(true);
     
     try {
+      // Valider les données avant insertion
+      if (!formData.title || !formData.description || formData.price <= 0) {
+        throw new Error('Veuillez remplir tous les champs obligatoires');
+      }
+
+      // Calculer la commission en pourcentage pour la base de données
+      let commissionPct = formData.commission;
+      if (formData.commissionType === 'fixed') {
+        // Convertir le montant fixe en pourcentage
+        commissionPct = formData.price > 0 ? (formData.commission / formData.price) * 100 : 0;
+      }
+
+      // S'assurer que les valeurs sont dans des limites raisonnables
+      const safePrice = Math.min(Math.max(formData.price, 0), 999999999);
+      const safeCommission = Math.min(Math.max(commissionPct, 0), 100);
+
+      // Obtenir l'utilisateur connecté
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        throw new Error('Vous devez être connecté pour publier un produit');
+      }
+
       // Sauvegarder le produit en base
       const { data: product, error } = await supabase
         .from('products')
         .insert({
           title: formData.title,
           description: formData.description,
-          price: formData.price,
-          commission_pct: formData.commission,
+          price: safePrice,
+          commission_pct: safeCommission,
           category: 'other' as const,
-          vendor_id: (await supabase.auth.getUser()).data.user?.id,
-          media_url: formData.images.find(img => img.isCover)?.url || formData.images[0]?.url,
+          vendor_id: user.user.id,
+          media_url: formData.images.find(img => img.isCover)?.url || formData.images[0]?.url || null,
           is_active: true
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw new Error(`Erreur de base de données: ${error.message}`);
+      }
 
       // Simuler la génération de landing page
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      const generatedUrl = `https://linkly.com/p/${formData.slug}`;
+      const generatedUrl = `https://linkly.com/p/${formData.slug || 'produit'}`;
       setLandingPageUrl(generatedUrl);
       setIsPublished(true);
       
@@ -70,7 +95,7 @@ export function PublishStep({ formData, updateFormData }: Props) {
       console.error('Erreur publication:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de publier le produit. Veuillez réessayer.",
+        description: error instanceof Error ? error.message : "Impossible de publier le produit. Veuillez réessayer.",
         variant: "destructive"
       });
     } finally {
@@ -207,7 +232,12 @@ export function PublishStep({ formData, updateFormData }: Props) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Commission :</span>
-                  <span className="font-medium text-success">{formData.commission}%</span>
+                  <span className="font-medium text-success">
+                    {formData.commissionType === 'fixed' 
+                      ? `${formData.commission} DA`
+                      : `${formData.commission}%`
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Images :</span>
