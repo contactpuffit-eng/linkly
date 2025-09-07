@@ -40,6 +40,7 @@ export function PublishStep({ formData, updateFormData }: Props) {
       const { data: product, error } = await supabase
         .from('products')
         .insert({
+          title: formData.title,
           description: formData.description,
           price: formData.price,
           commission_pct: formData.commission,
