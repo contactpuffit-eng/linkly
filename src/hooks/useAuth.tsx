@@ -20,7 +20,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string, name: string, role: 'vendor' | 'affiliate') => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, role?: 'vendor' | 'affiliate') => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
 
@@ -33,101 +33,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer profile fetching with setTimeout
-          setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            setProfile(profileData);
-            setLoading(false);
-          }, 0);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setTimeout(async () => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          setProfile(profileData);
-          setLoading(false);
-        }, 0);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    // For demo mode, no real auth needed
+    setLoading(false);
   }, []);
 
   const signUp = async (email: string, password: string, name: string, role: 'vendor' | 'affiliate') => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { data, error } = await supabase.auth.signUp({
+    // For demo purposes, create a fake user session
+    const fakeUser = {
+      id: `fake-${Date.now()}`,
       email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name,
-          role
-        }
-      }
-    });
+      user_metadata: { name, role }
+    };
 
-    if (!error && data.user) {
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: data.user.id,
-          email,
-          name,
-          role
-        });
+    // Create a fake profile
+    const fakeProfile = {
+      user_id: fakeUser.id,
+      email,
+      name,
+      role
+    };
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        return { error: profileError };
-      }
-    }
+    setUser(fakeUser as any);
+    setProfile(fakeProfile as any);
 
-    return { error };
+    return { error: null };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+  const signIn = async (email: string, password: string, role?: 'vendor' | 'affiliate') => {
+    // For demo purposes, accept any email/password
+    const fakeUser = {
+      id: `fake-${Date.now()}`,
       email,
-      password
-    });
-    return { error };
+      user_metadata: { name: email.split('@')[0], role: role || 'affiliate' }
+    };
+
+    // Create a fake profile
+    const fakeProfile = {
+      user_id: fakeUser.id,
+      email,
+      name: email.split('@')[0],
+      role: role || 'affiliate'
+    };
+
+    setUser(fakeUser as any);
+    setProfile(fakeProfile as any);
+    setLoading(false);
+
+    return { error: null };
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+    return { error: null };
   };
 
   const value = {
