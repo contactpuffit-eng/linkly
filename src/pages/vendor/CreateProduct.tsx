@@ -16,18 +16,20 @@ import { PublishStep } from '@/components/vendor/create-product/PublishStep';
 import { AIImportPanel } from '@/components/vendor/create-product/AIImportPanel';
 
 export interface ProductFormData {
-  // Mode
+  // Import mode
   importMode: 'ai' | 'manual';
   sourceUrl?: string;
-  
-  // Basic Info
+
+  // Basic info
   title: string;
+  slug: string;
   category: string;
   subcategory: string;
   description: string;
   price: number;
   crossedPrice?: number;
   commission: number;
+  commissionType: 'percentage' | 'fixed';
   variants: Array<{
     name: string;
     sku: string;
@@ -36,28 +38,30 @@ export interface ProductFormData {
   }>;
   totalStock?: number;
   tags: string[];
-  
+
   // Media
   images: Array<{
     url: string;
     alt: string;
     isCover: boolean;
   }>;
-  
+
   // SEO
-  slug: string;
   metaTitle: string;
   metaDescription: string;
-  
+
   // Tracking
+  pixelId?: string;
   promoCode: string;
   promoEnabled: boolean;
-  
-  // Payment
+
+  // Payment & Shipping
   paymentMode: 'form' | 'online';
-  
-  // Shipping
-  transporterKey?: string;
+  shippingProvider?: string;
+  shippingApiKey?: string;
+
+  // Publishing
+  isActive: boolean;
 }
 
 const steps = [
@@ -78,22 +82,24 @@ export default function CreateProduct() {
   const [aiData, setAIData] = useState<any>(null);
   
   const [formData, setFormData] = useState<ProductFormData>({
-    importMode: 'manual',
+    importMode: 'ai',
     title: '',
+    slug: '',
     category: '',
     subcategory: '',
     description: '',
     price: 0,
     commission: 10,
+    commissionType: 'percentage',
     variants: [],
     tags: [],
     images: [],
-    slug: '',
     metaTitle: '',
     metaDescription: '',
     promoCode: `AFF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
     promoEnabled: true,
-    paymentMode: 'form'
+    paymentMode: 'form',
+    isActive: false
   });
 
   const updateFormData = (updates: Partial<ProductFormData>) => {
@@ -130,65 +136,88 @@ export default function CreateProduct() {
     setShowAIPanel(true);
     
     try {
-      // Simuler l'import IA
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Starting AI import for:', url);
       
-      const mockAIData = {
-        extracted: {
-          title: "Crème Visage Omega+ Hydratante",
-          price: 4200,
-          currency: "DZD",
-          description: "Hydratation 24h garantie avec vitamine E et acide hyaluronique",
-          images: [
-            { url: "/placeholder.svg", alt: "Crème visage", isCover: true }
-          ],
-          variants: [
-            { name: "50ml", sku: "OMEGA50", price: 4200, stock: 30 },
-            { name: "100ml", sku: "OMEGA100", price: 6900, stock: 20 }
-          ],
-          tags: ["soin", "hydratant", "peau sèche"]
+      const response = await fetch('https://tmjfonqpxiscyparrmxb.supabase.co/functions/v1/ai-import-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        ai_generated: {
-          bullet_benefits: ["Hydratation longue durée", "Protection antioxydante", "Texture légère"],
-          seo_title: "Crème Visage Omega+ — Hydratation 24h (Algérie)",
-          seo_description: "Soin hydratant riche en Vitamine E. Livraison rapide. Essayez maintenant."
-        }
-      };
+        body: JSON.stringify({ url })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('AI import response:', data);
       
-      setAIData(mockAIData);
+      if (data.success) {
+        setAIData(data);
+      } else {
+        throw new Error(data.error || 'Failed to import product');
+      }
+      
     } catch (error) {
-      console.error('Erreur import IA:', error);
+      console.error('AI import failed:', error);
+      setAIData(null);
     } finally {
       setIsAIImporting(false);
     }
   };
 
   const acceptAIData = (field?: string) => {
-    if (!aiData) return;
-    
+    if (!aiData?.extracted) return;
+
     const updates: Partial<ProductFormData> = {};
     
-    if (!field || field === 'all') {
+    if (field === 'all' || field === 'title') {
       updates.title = aiData.extracted.title;
-      updates.price = aiData.extracted.price;
-      updates.description = aiData.extracted.description;
-      updates.images = aiData.extracted.images;
-      updates.variants = aiData.extracted.variants;
-      updates.tags = aiData.extracted.tags;
-      updates.metaTitle = aiData.ai_generated.seo_title;
-      updates.metaDescription = aiData.ai_generated.seo_description;
-      updates.slug = aiData.extracted.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    } else if (field === 'title') {
-      updates.title = aiData.extracted.title;
-    } else if (field === 'price') {
-      updates.price = aiData.extracted.price;
-    } else if (field === 'description') {
-      updates.description = aiData.extracted.description;
+      updates.slug = aiData.extracted.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-');
+      updates.metaTitle = aiData.ai_generated?.seo_title || aiData.extracted.title;
     }
     
-    updateFormData(updates);
+    if (field === 'all' || field === 'price') {
+      updates.price = aiData.extracted.price;
+    }
     
-    if (!field || field === 'all') {
+    if (field === 'all' || field === 'description') {
+      updates.description = aiData.extracted.description;
+      updates.metaDescription = aiData.ai_generated?.seo_description || aiData.extracted.description;
+    }
+    
+    if (field === 'all' || field === 'tags') {
+      updates.tags = aiData.extracted.tags || [];
+    }
+    
+    if (field === 'all' || field === 'images') {
+      if (aiData.extracted.images && aiData.extracted.images.length > 0) {
+        updates.images = aiData.extracted.images.map((img: any, index: number) => ({
+          url: img.url,
+          alt: img.alt || `Image ${index + 1}`,
+          isCover: index === 0
+        }));
+      }
+    }
+    
+    if (field === 'all' || field === 'variants') {
+      if (aiData.extracted.variants && aiData.extracted.variants.length > 0) {
+        updates.variants = aiData.extracted.variants;
+      }
+    }
+    
+    // Auto-generate category suggestion
+    if (field === 'all' && aiData.ai_generated?.category_suggestion) {
+      updates.category = aiData.ai_generated.category_suggestion;
+    }
+    
+    setFormData(prev => ({ ...prev, ...updates }));
+    
+    if (field === 'all') {
       setShowAIPanel(false);
       setCurrentStep(1);
     }
@@ -425,7 +454,12 @@ export default function CreateProduct() {
                 
                 <div className="pt-4 border-t">
                   <div className="text-sm text-muted-foreground">
-                    Commission: <span className="font-medium text-success">{formData.commission}%</span>
+                    Commission: <span className="font-medium text-success">
+                      {formData.commissionType === 'fixed' 
+                        ? `${formData.commission} DA`
+                        : `${formData.commission}%`
+                      }
+                    </span>
                   </div>
                   {formData.slug && (
                     <div className="text-sm text-muted-foreground mt-1">

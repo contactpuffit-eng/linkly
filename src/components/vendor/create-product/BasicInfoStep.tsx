@@ -189,16 +189,42 @@ export function BasicInfoStep({ formData, updateFormData }: Props) {
             </div>
 
             <div>
-              <Label htmlFor="commission">Commission affilié (%) *</Label>
+              <Label htmlFor="commission-type">Type de commission</Label>
+              <Select 
+                value={formData.commissionType || 'percentage'} 
+                onValueChange={(value) => updateFormData({ commissionType: value as 'percentage' | 'fixed' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                  <SelectItem value="fixed">Montant fixe (DA)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            <div>
+              <Label htmlFor="commission">
+                Commission affilié {formData.commissionType === 'fixed' ? '(DA)' : '(%)'} *
+              </Label>
               <Input
                 id="commission"
                 type="number"
                 min="0"
-                max="50"
+                max={formData.commissionType === 'percentage' ? "50" : undefined}
                 value={formData.commission}
                 onChange={(e) => updateFormData({ commission: Number(e.target.value) })}
-                placeholder="10"
+                placeholder={formData.commissionType === 'fixed' ? '500' : '10'}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.commissionType === 'fixed' 
+                  ? 'Montant fixe que gagnera chaque affilié par vente'
+                  : 'Pourcentage du prix que gagnera chaque affilié'
+                }
+              </p>
             </div>
           </div>
 
@@ -207,7 +233,10 @@ export function BasicInfoStep({ formData, updateFormData }: Props) {
               <div className="text-sm">
                 <strong>Commission par vente :</strong>{' '}
                 <span className="text-success font-bold">
-                  {((formData.price * formData.commission) / 100).toLocaleString()} DA
+                  {formData.commissionType === 'fixed' 
+                    ? `${formData.commission.toLocaleString()} DA`
+                    : `${((formData.price * formData.commission) / 100).toLocaleString()} DA`
+                  }
                 </span>
               </div>
             </div>

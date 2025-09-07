@@ -240,6 +240,50 @@ export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: 
                     </div>
                   </>
                 )}
+
+                {/* Reviews */}
+                {aiData.extracted.reviews && aiData.extracted.reviews.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-medium text-lg">Avis clients détectés</h4>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => onAccept('reviews')}
+                        >
+                          Accepter tous
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        {aiData.extracted.reviews.slice(0, 3).map((review: any, index: number) => (
+                          <div key={index} className="border rounded-lg p-3">
+                            <div className="flex items-center mb-2">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className={`w-4 h-4 ${
+                                      i < review.rating ? 'text-yellow-400' : 'text-gray-300'
+                                    }`}
+                                  >
+                                    ★
+                                  </div>
+                                ))}
+                              </div>
+                              <span className="ml-2 text-sm font-medium">{review.rating}/5</span>
+                              {review.author && (
+                                <span className="ml-2 text-sm text-muted-foreground">- {review.author}</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{review.comment}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             ) : (
               <div className="text-center py-12">

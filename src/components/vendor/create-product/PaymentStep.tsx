@@ -170,8 +170,8 @@ export function PaymentStep({ formData, updateFormData }: Props) {
               <Input
                 id="transporter-key"
                 type="password"
-                value={formData.transporterKey || ''}
-                onChange={(e) => updateFormData({ transporterKey: e.target.value })}
+                value={formData.shippingApiKey || ''}
+                onChange={(e) => updateFormData({ shippingApiKey: e.target.value })}
                 placeholder="Votre clé API transporteur"
                 className="mt-1"
               />
@@ -183,7 +183,7 @@ export function PaymentStep({ formData, updateFormData }: Props) {
             <div className="bg-background border rounded-lg p-4">
               <h4 className="font-medium mb-3">Gestion des livraisons :</h4>
               
-              {formData.transporterKey ? (
+              {formData.shippingApiKey ? (
                 <div className="space-y-2">
                   <div className="flex items-center text-sm">
                     <div className="w-2 h-2 bg-success rounded-full mr-2"></div>
@@ -266,7 +266,7 @@ export function PaymentStep({ formData, updateFormData }: Props) {
                 <div>
                   <div className="font-medium">Expédition</div>
                   <div className="text-sm text-muted-foreground">
-                    {formData.transporterKey 
+                    {formData.shippingApiKey 
                       ? "Création automatique d'envoi + tracking" 
                       : "Saisie manuelle du tracking"
                     }
