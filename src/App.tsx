@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import VendorOverview from "./pages/vendor/VendorOverview";
+import VendorProducts from "./pages/vendor/VendorProducts";
+import CreateProduct from "./pages/vendor/CreateProduct";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateLinkInBio from "./pages/AffiliateLinkInBio";
 import NotFound from "./pages/NotFound";
@@ -37,6 +39,20 @@ const App = () => (
               <ProtectedRoute requiredRole="vendor">
                 <VendorLayout>
                   <VendorOverview />
+                </VendorLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/products" element={
+              <ProtectedRoute requiredRole="vendor">
+                <VendorLayout>
+                  <VendorProducts />
+                </VendorLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/products/create" element={
+              <ProtectedRoute requiredRole="vendor">
+                <VendorLayout>
+                  <CreateProduct />
                 </VendorLayout>
               </ProtectedRoute>
             } />
