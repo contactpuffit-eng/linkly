@@ -2,7 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Check, X, Wand2, Loader2, AlertTriangle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Check, X, Wand2, Loader2, AlertTriangle, Edit } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface Props {
   isOpen: boolean;
@@ -13,7 +16,59 @@ interface Props {
 }
 
 export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: Props) {
+  const [editableData, setEditableData] = useState<any>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  // Initialize editable data when aiData changes
+  React.useEffect(() => {
+    if (aiData) {
+      setEditableData(JSON.parse(JSON.stringify(aiData)));
+    }
+  }, [aiData]);
+
   if (!isOpen) return null;
+
+  const handleFieldEdit = (field: string, value: any) => {
+    if (!editableData) return;
+    
+    const newData = { ...editableData };
+    if (field === 'title' || field === 'description') {
+      newData.extracted[field] = value;
+    } else if (field === 'price') {
+      newData.extracted[field] = parseFloat(value) || 0;
+    } else if (field === 'tags') {
+      newData.extracted[field] = value;
+    }
+    
+    setEditableData(newData);
+  };
+
+  const handleAccept = (field?: string) => {
+    // Pass the edited data to the parent callback
+    if (editableData) {
+      // Create a modified version of aiData with our edits
+      const modifiedAiData = {
+        ...aiData,
+        extracted: editableData.extracted,
+        ai_generated: editableData.ai_generated
+      };
+      
+      // Temporarily update the aiData reference so parent gets our edited data
+      const originalExtracted = aiData.extracted;
+      const originalGenerated = aiData.ai_generated;
+      
+      aiData.extracted = editableData.extracted;
+      aiData.ai_generated = editableData.ai_generated;
+      
+      onAccept(field);
+      
+      // Restore original data (though parent should have processed our changes)
+      aiData.extracted = originalExtracted;
+      aiData.ai_generated = originalGenerated;
+    } else {
+      onAccept(field);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -55,7 +110,7 @@ export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: 
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Données extraites</h3>
                   <div className="space-x-2">
-                    <Button onClick={() => onAccept('all')} className="bg-gradient-primary">
+                    <Button onClick={() => handleAccept('all')} className="bg-gradient-primary">
                       <Check className="w-4 h-4 mr-2" />
                       Accepter tout
                     </Button>
@@ -77,45 +132,113 @@ export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: 
                       <div className="border rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <label className="text-sm font-medium text-muted-foreground">Titre</label>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => onAccept('title')}
-                          >
-                            Accepter
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => setEditingField(editingField === 'title' ? null : 'title')}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleAccept('title')}
+                            >
+                              Accepter
+                            </Button>
+                          </div>
                         </div>
-                        <p className="font-medium">{aiData.extracted.title}</p>
+                        {editingField === 'title' ? (
+                          <Input
+                            value={editableData?.extracted?.title || ''}
+                            onChange={(e) => handleFieldEdit('title', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                            autoFocus
+                            className="font-medium"
+                          />
+                        ) : (
+                          <p className="font-medium cursor-pointer hover:bg-muted/50 p-2 rounded" onClick={() => setEditingField('title')}>
+                            {editableData?.extracted?.title || aiData.extracted.title}
+                          </p>
+                        )}
                       </div>
 
                       <div className="border rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <label className="text-sm font-medium text-muted-foreground">Prix</label>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => onAccept('price')}
-                          >
-                            Accepter
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => setEditingField(editingField === 'price' ? null : 'price')}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleAccept('price')}
+                            >
+                              Accepter
+                            </Button>
+                          </div>
                         </div>
-                        <p className="font-medium">
-                          {aiData.extracted.price?.toLocaleString()} {aiData.extracted.currency}
-                        </p>
+                        {editingField === 'price' ? (
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              type="number"
+                              value={editableData?.extracted?.price || 0}
+                              onChange={(e) => handleFieldEdit('price', e.target.value)}
+                              onBlur={() => setEditingField(null)}
+                              onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                              autoFocus
+                              className="font-medium"
+                            />
+                            <span className="text-sm text-muted-foreground">DA</span>
+                          </div>
+                        ) : (
+                          <p className="font-medium cursor-pointer hover:bg-muted/50 p-2 rounded" onClick={() => setEditingField('price')}>
+                            {(editableData?.extracted?.price || aiData.extracted.price)?.toLocaleString()} DA
+                          </p>
+                        )}
                       </div>
 
                       <div className="border rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <label className="text-sm font-medium text-muted-foreground">Description</label>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => onAccept('description')}
-                          >
-                            Accepter
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => setEditingField(editingField === 'description' ? null : 'description')}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleAccept('description')}
+                            >
+                              Accepter
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-sm">{aiData.extracted.description}</p>
+                        {editingField === 'description' ? (
+                          <Textarea
+                            value={editableData?.extracted?.description || ''}
+                            onChange={(e) => handleFieldEdit('description', e.target.value)}
+                            onBlur={() => setEditingField(null)}
+                            autoFocus
+                            rows={3}
+                            className="text-sm resize-none"
+                          />
+                        ) : (
+                          <p className="text-sm cursor-pointer hover:bg-muted/50 p-2 rounded" onClick={() => setEditingField('description')}>
+                            {editableData?.extracted?.description || aiData.extracted.description}
+                          </p>
+                        )}
                       </div>
 
                       {aiData.extracted.tags && (
@@ -125,7 +248,7 @@ export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: 
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => onAccept('tags')}
+                              onClick={() => handleAccept('tags')}
                             >
                               Accepter
                             </Button>
@@ -180,7 +303,7 @@ export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: 
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => onAccept('images')}
+                          onClick={() => handleAccept('images')}
                         >
                           Accepter toutes
                         </Button>
@@ -210,7 +333,7 @@ export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: 
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => onAccept('variants')}
+                          onClick={() => handleAccept('variants')}
                         >
                           Accepter toutes
                         </Button>
@@ -251,7 +374,7 @@ export function AIImportPanel({ isOpen, onClose, aiData, onAccept, isLoading }: 
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => onAccept('reviews')}
+                          onClick={() => handleAccept('reviews')}
                         >
                           Accepter tous
                         </Button>
