@@ -168,9 +168,11 @@ export function BasicInfoStep({ formData, updateFormData }: Props) {
               <Input
                 id="price"
                 type="number"
-                value={formData.price}
-                onChange={(e) => updateFormData({ price: Number(e.target.value) })}
+                value={formData.price || ''}
+                onChange={(e) => updateFormData({ price: e.target.value === '' ? 0 : Number(e.target.value) })}
                 placeholder="0"
+                min="0"
+                step="0.01"
               />
             </div>
 
@@ -180,8 +182,10 @@ export function BasicInfoStep({ formData, updateFormData }: Props) {
                 id="crossed-price"
                 type="number"
                 value={formData.crossedPrice || ''}
-                onChange={(e) => updateFormData({ crossedPrice: Number(e.target.value) || undefined })}
+                onChange={(e) => updateFormData({ crossedPrice: e.target.value === '' ? undefined : Number(e.target.value) })}
                 placeholder="0"
+                min="0"
+                step="0.01"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Prix original pour afficher une promotion
@@ -214,9 +218,10 @@ export function BasicInfoStep({ formData, updateFormData }: Props) {
                 id="commission"
                 type="number"
                 min="0"
+                step="0.01"
                 max={formData.commissionType === 'percentage' ? "50" : undefined}
-                value={formData.commission}
-                onChange={(e) => updateFormData({ commission: Number(e.target.value) })}
+                value={formData.commission || ''}
+                onChange={(e) => updateFormData({ commission: e.target.value === '' ? 0 : Number(e.target.value) })}
                 placeholder={formData.commissionType === 'fixed' ? '500' : '10'}
               />
               <p className="text-xs text-muted-foreground mt-1">
