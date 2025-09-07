@@ -14,16 +14,435 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      affiliate_link_stats: {
+        Row: {
+          affiliate_code: string
+          affiliate_id: string
+          created_at: string | null
+          event_type: string
+          id: string
+          product_id: string
+          user_agent: string | null
+          user_ip: string | null
+        }
+        Insert: {
+          affiliate_code: string
+          affiliate_id: string
+          created_at?: string | null
+          event_type: string
+          id?: string
+          product_id: string
+          user_agent?: string | null
+          user_ip?: string | null
+        }
+        Update: {
+          affiliate_code?: string
+          affiliate_id?: string
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          product_id?: string
+          user_agent?: string | null
+          user_ip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_link_stats_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "affiliate_link_stats_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_products: {
+        Row: {
+          affiliate_code: string
+          affiliate_id: string
+          created_at: string | null
+          id: string
+          product_id: string
+          promo_code: string
+        }
+        Insert: {
+          affiliate_code: string
+          affiliate_id: string
+          created_at?: string | null
+          id?: string
+          product_id: string
+          promo_code: string
+        }
+        Update: {
+          affiliate_code?: string
+          affiliate_id?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          promo_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_products_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "affiliate_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_requests: {
+        Row: {
+          affiliate_id: string
+          created_at: string | null
+          id: string
+          message: string | null
+          product_id: string
+          status: Database["public"]["Enums"]["request_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          product_id: string
+          status?: Database["public"]["Enums"]["request_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          product_id?: string
+          status?: Database["public"]["Enums"]["request_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_requests_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "affiliate_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          affiliate_code: string | null
+          affiliate_id: string | null
+          amount: number
+          commission_amount: number | null
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          is_returned: boolean | null
+          product_id: string
+          return_reason: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_code?: string | null
+          affiliate_id?: string | null
+          amount: number
+          commission_amount?: number | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          is_returned?: boolean | null
+          product_id: string
+          return_reason?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_code?: string | null
+          affiliate_id?: string | null
+          amount?: number
+          commission_amount?: number | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          is_returned?: boolean | null
+          product_id?: string
+          return_reason?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: Database["public"]["Enums"]["product_category"] | null
+          commission_pct: number
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          media_url: string | null
+          price: number
+          restaurant_address: string | null
+          restaurant_phone: string | null
+          title: string
+          updated_at: string | null
+          vendor_id: string
+          website_url: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["product_category"] | null
+          commission_pct: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          media_url?: string | null
+          price: number
+          restaurant_address?: string | null
+          restaurant_phone?: string | null
+          title: string
+          updated_at?: string | null
+          vendor_id: string
+          website_url?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["product_category"] | null
+          commission_pct?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          media_url?: string | null
+          price?: number
+          restaurant_address?: string | null
+          restaurant_phone?: string | null
+          title?: string
+          updated_at?: string | null
+          vendor_id?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          email: string
+          landing_page_enabled: boolean | null
+          name: string
+          role: Database["public"]["Enums"]["user_role"] | null
+          theme_color: string | null
+          updated_at: string | null
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email: string
+          landing_page_enabled?: boolean | null
+          name: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          theme_color?: string | null
+          updated_at?: string | null
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string
+          landing_page_enabled?: boolean | null
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          theme_color?: string | null
+          updated_at?: string | null
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      restaurant_qr_codes: {
+        Row: {
+          affiliate_id: string
+          created_at: string | null
+          id: string
+          product_id: string
+          qr_code: string
+          scans_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string | null
+          id?: string
+          product_id: string
+          qr_code: string
+          scans_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          qr_code?: string
+          scans_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_qr_codes_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "restaurant_qr_codes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          created_at: string | null
+          pending_balance: number | null
+          total_earned: number | null
+          updated_at: string | null
+          user_id: string
+          validated_balance: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          pending_balance?: number | null
+          total_earned?: number | null
+          updated_at?: string | null
+          user_id: string
+          validated_balance?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          pending_balance?: number | null
+          total_earned?: number | null
+          updated_at?: string | null
+          user_id?: string
+          validated_balance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      approve_affiliate_request: {
+        Args: { request_id: string }
+        Returns: Json
+      }
+      generate_affiliate_code: {
+        Args: { affiliate_uuid: string; product_uuid: string }
+        Returns: string
+      }
+      generate_promo_code: {
+        Args: { affiliate_uuid: string; product_uuid: string }
+        Returns: string
+      }
+      scan_qr_code: {
+        Args: { qr_code_param: string; sale_amount: number }
+        Returns: Json
+      }
+      update_order_status: {
+        Args: {
+          new_status: Database["public"]["Enums"]["order_status"]
+          order_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
-      [_ in never]: never
+      order_status:
+        | "pending"
+        | "processing"
+        | "shipped"
+        | "delivered"
+        | "rejected"
+        | "returned"
+      product_category:
+        | "electronics"
+        | "fashion"
+        | "food"
+        | "health"
+        | "home"
+        | "sports"
+        | "other"
+      request_status: "pending" | "approved" | "rejected"
+      user_role: "admin" | "vendor" | "affiliate"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +569,26 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      order_status: [
+        "pending",
+        "processing",
+        "shipped",
+        "delivered",
+        "rejected",
+        "returned",
+      ],
+      product_category: [
+        "electronics",
+        "fashion",
+        "food",
+        "health",
+        "home",
+        "sports",
+        "other",
+      ],
+      request_status: ["pending", "approved", "rejected"],
+      user_role: ["admin", "vendor", "affiliate"],
+    },
   },
 } as const
