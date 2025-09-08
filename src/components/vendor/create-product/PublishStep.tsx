@@ -73,10 +73,10 @@ export function PublishStep({ formData, updateFormData }: Props) {
         throw new Error(`Erreur de base de données: ${error.message}`);
       }
 
-      // Simuler la génération de landing page
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Génération de la landing page réelle
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const generatedUrl = `https://linkly.com/p/${formData.slug || 'produit'}`;
+      const generatedUrl = `${window.location.origin}/p/${formData.slug || product.id}`;
       setLandingPageUrl(generatedUrl);
       setIsPublished(true);
       

@@ -11,6 +11,7 @@ import VendorProducts from "./pages/vendor/VendorProducts";
 import CreateProduct from "./pages/vendor/CreateProduct";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateLinkInBio from "./pages/AffiliateLinkInBio";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/@:username" element={<AffiliateLinkInBio />} />
+          <Route path="/p/:slug" element={<LandingPage />} />
           
           {/* Vendor routes */}
           <Route path="/vendor" element={
