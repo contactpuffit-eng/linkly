@@ -34,16 +34,14 @@ import {
 const menuItems = [
   { title: 'Vue d\'ensemble', url: '/vendor', icon: BarChart3 },
   { title: 'Gérer Produits', url: '/vendor/products', icon: Package },
-  { title: 'Performance Produits', url: '/vendor/products/performance', icon: BarChart3 },
-  { title: 'Performance Affiliés', url: '/vendor/affiliates', icon: Users },
-  { title: 'Statistiques Financières', url: '/vendor/financials', icon: DollarSign },
-  { title: 'Portefeuille', url: '/vendor/wallet', icon: Wallet },
   { title: 'Créer Landing Page IA', url: '/vendor/ai-landing', icon: Wand2 },
   { title: 'Mes Landing Pages', url: '/vendor/landing-pages', icon: FileText },
+  { title: 'Performance Produits', url: '/vendor/products/performance', icon: BarChart3 },
+  { title: 'Performance Affiliés', url: '/vendor/affiliates', icon: Users },
   { title: 'Commandes Landing', url: '/vendor/orders', icon: ShoppingCart },
+  { title: 'Statistiques Financières', url: '/vendor/financials', icon: DollarSign },
+  { title: 'Portefeuille', url: '/vendor/wallet', icon: Wallet },
   { title: 'Paramètres Livraison', url: '/vendor/delivery', icon: Truck },
-  { title: 'Script Tracking', url: '/vendor/tracking', icon: Code },
-  { title: 'Proxy Intelligent', url: '/vendor/proxy', icon: Link2 },
   { title: 'Scanner QR', url: '/vendor/qr-scanner', icon: QrCode },
 ];
 

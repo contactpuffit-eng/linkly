@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import VendorOverview from "./pages/vendor/VendorOverview";
 import VendorProducts from "./pages/vendor/VendorProducts";
+import ProductCatalog from "./pages/vendor/ProductCatalog";
+import CreateLandingPage from "./pages/vendor/CreateLandingPage";
 import CreateProduct from "./pages/vendor/CreateProduct";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateLinkInBio from "./pages/AffiliateLinkInBio";
@@ -37,7 +39,12 @@ const App = () => (
           } />
           <Route path="/vendor/products" element={
             <VendorLayout>
-              <VendorProducts />
+              <ProductCatalog />
+            </VendorLayout>
+          } />
+          <Route path="/vendor/ai-landing" element={
+            <VendorLayout>
+              <CreateLandingPage />
             </VendorLayout>
           } />
           <Route path="/vendor/products/create" element={
