@@ -229,7 +229,7 @@ export type Database = {
           restaurant_phone: string | null
           title: string
           updated_at: string | null
-          vendor_id: string
+          vendor_id: string | null
           website_url: string | null
         }
         Insert: {
@@ -245,7 +245,7 @@ export type Database = {
           restaurant_phone?: string | null
           title: string
           updated_at?: string | null
-          vendor_id: string
+          vendor_id?: string | null
           website_url?: string | null
         }
         Update: {
@@ -261,7 +261,7 @@ export type Database = {
           restaurant_phone?: string | null
           title?: string
           updated_at?: string | null
-          vendor_id?: string
+          vendor_id?: string | null
           website_url?: string | null
         }
         Relationships: [
