@@ -62,7 +62,7 @@ export default function ProductCatalog() {
           price: productData.price,
           commission_pct: 15, // Commission par défaut de 15%
           category: productData.category as any,
-          vendor_id: '00000000-0000-0000-0000-000000000000',
+          vendor_id: null, // Temporairement null jusqu'à l'auth
           media_url: productData.images.find(img => img.isCover)?.url || productData.images[0]?.url || null,
           is_active: true
         })
