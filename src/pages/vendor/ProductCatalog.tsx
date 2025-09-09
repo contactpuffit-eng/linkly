@@ -46,7 +46,8 @@ export default function ProductCatalog() {
     images: [],
     tags: []
   });
-  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiUrl, setAiUrl] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const { toast } = useToast();
 
   const addProduct = async (productData: ProductFormData) => {
@@ -98,43 +99,56 @@ export default function ProductCatalog() {
     }
   };
 
-  const generateProductWithAI = async () => {
-    setLoading(true);
-    
-    try {
-      // Simuler la génération IA
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Produit généré par IA basé sur le prompt
-      const aiGeneratedProduct: ProductFormData = {
-        title: `Produit généré: ${aiPrompt.slice(0, 30)}...`,
-        description: `Description optimisée générée par IA pour: ${aiPrompt}. Ce produit a été conçu pour répondre aux besoins spécifiques mentionnés avec des caractéristiques premium et une qualité exceptionnelle.`,
-        price: Math.floor(Math.random() * 50000) + 5000,
-        category: 'other',
-        images: [{
-          url: '/api/placeholder/400/400',
-          isCover: true
-        }],
-        tags: ['IA', 'Premium', 'Nouveau']
-      };
-      
-      await addProduct(aiGeneratedProduct);
-      setAiPrompt('');
-      
-      toast({
-        title: "Produit généré par IA !",
-        description: "L'IA a créé un produit optimisé basé sur votre description",
-      });
-      
-    } catch (error) {
-      console.error('Error generating product:', error);
+  const importProductWithAI = async () => {
+    if (!aiUrl.trim()) {
       toast({
         title: "Erreur",
-        description: "Impossible de générer le produit. Veuillez réessayer.",
+        description: "Veuillez entrer une URL valide",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAiLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-import-product', {
+        body: { url: aiUrl }
+      });
+
+      if (error) throw error;
+
+      if (data && data.extracted) {
+        const importedProduct: ProductFormData = {
+          title: data.extracted.title || 'Produit importé',
+          description: data.extracted.description || data.ai_generated?.seo_description || 'Description générée par IA',
+          price: data.extracted.price || 0,
+          category: 'other',
+          images: data.extracted.images?.map((img: any) => ({
+            url: img.url,
+            isCover: img === data.extracted.images[0]
+          })) || [],
+          tags: data.extracted.tags || []
+        };
+
+        await addProduct(importedProduct);
+        setAiUrl('');
+        
+        toast({
+          title: "Produit importé avec succès !",
+          description: "Le produit a été analysé et ajouté à votre catalogue",
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error importing product:', error);
+      toast({
+        title: "Erreur d'importation",
+        description: "Impossible d'importer le produit. Vérifiez l'URL et réessayez.",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setAiLoading(false);
     }
   };
 
@@ -163,17 +177,17 @@ export default function ProductCatalog() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="aiPrompt">Décrivez votre produit</Label>
-                <Textarea
-                  id="aiPrompt"
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="Ex: Une machine à café automatique premium avec écran tactile, moulin intégré, compatible capsules et grains, design moderne noir mat, prix autour de 25000 DA, pour amateurs de café exigeants..."
-                  rows={5}
+                <Label htmlFor="aiUrl">URL du produit à importer</Label>
+                <Input
+                  id="aiUrl"
+                  type="url"
+                  value={aiUrl}
+                  onChange={(e) => setAiUrl(e.target.value)}
+                  placeholder="https://example.com/produit"
                   className="mt-2"
                 />
                 <p className="text-sm text-muted-foreground mt-2">
-                  Plus vous êtes précis, meilleur sera le résultat. Mentionnez : type de produit, caractéristiques, prix souhaité, public cible...
+                  Collez l'URL de n'importe quel produit en ligne. L'IA va extraire automatiquement toutes les informations.
                 </p>
               </div>
 
@@ -204,19 +218,19 @@ export default function ProductCatalog() {
               </div>
 
               <Button 
-                onClick={generateProductWithAI}
-                disabled={!aiPrompt.trim() || loading}
+                onClick={importProductWithAI}
+                disabled={!aiUrl.trim() || aiLoading}
                 className="w-full bg-gradient-primary hover:opacity-90 text-lg py-6"
               >
-                {loading ? (
+                {aiLoading ? (
                   <>
                     <div className="animate-spin w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full" />
-                    L'IA crée votre produit...
+                    Analyse en cours...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Générer le produit avec l'IA
+                    <Link2 className="w-5 h-5 mr-2" />
+                    Importer avec l'IA
                   </>
                 )}
               </Button>

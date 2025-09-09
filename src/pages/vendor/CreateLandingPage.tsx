@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Sparkles, 
   Palette, 
@@ -20,6 +21,7 @@ import {
   Crown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LandingPageTheme {
   id: string;
@@ -93,7 +95,9 @@ const themes: LandingPageTheme[] = [
 
 export default function CreateLandingPage() {
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
-  const [step, setStep] = useState<'theme' | 'customize' | 'generate'>('theme');
+  const [step, setStep] = useState<'product' | 'theme' | 'customize' | 'generate'>('product');
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     productName: '',
     description: '',
@@ -104,6 +108,36 @@ export default function CreateLandingPage() {
     customInstructions: ''
   });
   const { toast } = useToast();
+
+  // Charger les produits
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (data) {
+        setProducts(data);
+      }
+    };
+    
+    fetchProducts();
+  }, []);
+
+  const handleProductSelect = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setSelectedProduct(productId);
+      setFormData({
+        ...formData,
+        productName: product.title,
+        description: product.description,
+        price: product.price.toString()
+      });
+      setStep('theme');
+    }
+  };
 
   const handleThemeSelect = (themeId: string) => {
     setSelectedTheme(themeId);
@@ -135,6 +169,70 @@ export default function CreateLandingPage() {
       setStep('customize');
     }
   };
+
+  if (step === 'product') {
+    return (
+      <div className="container max-w-6xl mx-auto p-6 space-y-8">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Choisir un produit
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Sélectionnez le produit pour lequel vous souhaitez créer une landing page
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((product) => (
+            <Card 
+              key={product.id}
+              className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
+              onClick={() => handleProductSelect(product.id)}
+            >
+              <CardHeader>
+                <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-4">
+                  {product.media_url ? (
+                    <img 
+                      src={product.media_url} 
+                      alt={product.title}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  ) : (
+                    <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+                  )}
+                </div>
+                <CardTitle className="text-lg line-clamp-2">{product.title}</CardTitle>
+                <div className="text-xl font-bold text-primary">
+                  {product.price.toLocaleString()} DA
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                  {product.description}
+                </p>
+                <Button className="w-full">
+                  Créer une landing page
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {products.length === 0 && (
+          <div className="text-center py-12">
+            <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Aucun produit trouvé</h3>
+            <p className="text-muted-foreground mb-4">
+              Vous devez d'abord ajouter des produits à votre catalogue
+            </p>
+            <Button onClick={() => window.location.href = '/vendor/products'}>
+              Gérer les produits
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (step === 'generate') {
     return (
@@ -189,9 +287,14 @@ export default function CreateLandingPage() {
               Thème sélectionné: <span className="font-medium">{theme?.name}</span>
             </p>
           </div>
-          <Button variant="outline" onClick={() => setStep('theme')}>
-            Changer de thème
-          </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setStep('product')}>
+                Changer de produit
+              </Button>
+              <Button variant="outline" onClick={() => setStep('theme')}>
+                Changer de thème
+              </Button>
+            </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -328,11 +431,18 @@ export default function CreateLandingPage() {
     <div className="container max-w-7xl mx-auto p-6 space-y-8">
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Créer une landing page IA
+          Choisir un thème
         </h1>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Choisissez un thème professionnel et laissez l'IA créer votre landing page optimisée pour les conversions
+          Sélectionnez un thème professionnel pour votre landing page
         </p>
+        {selectedProduct && (
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={() => setStep('product')}>
+              Changer de produit
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Theme Categories */}
