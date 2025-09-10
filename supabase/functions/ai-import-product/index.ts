@@ -223,21 +223,7 @@ function extractProductData(html: string, baseUrl: string): ExtractedData | null
         price = maxPrice;
         console.log(`Prix extrait: ${price} DA`);
       }
-        /class="[^"]*price[^"]*"[^>]*>.*?([0-9,]+(?:\.[0-9]{2})?)/gi,
-        /\$([0-9,]+(?:\.[0-9]{2})?)/g,
-        /([0-9,]+(?:\.[0-9]{2})?)\s*(?:DA|DZD|€|USD)/gi
-      ];
-      
-      for (const pattern of pricePatterns) {
-        const match = html.match(pattern);
-        if (match) {
-          const priceStr = match[0].match(/([0-9,]+(?:\.[0-9]{2})?)/);
-          if (priceStr) {
-            price = parseFloat(priceStr[1].replace(',', ''));
-            break;
-          }
-        }
-      }
+    }
     }
 
     // Extract description
