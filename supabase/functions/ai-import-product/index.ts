@@ -63,7 +63,7 @@ serve(async (req) => {
     if (!scrapedData) {
       return new Response(
         JSON.stringify({ 
-          error: 'Could not extract data from this URL',
+          error: 'Could not extract data from this URL. Please verify the URL and try again.',
           success: false 
         }),
         { 
@@ -96,7 +96,7 @@ serve(async (req) => {
     console.error('Error in ai-import-product:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: `Import failed: ${error.message}`,
         success: false 
       }),
       { 
@@ -135,256 +135,211 @@ async function scrapeWebpage(url: string): Promise<ExtractedData | null> {
 }
 
 function extractProductData(html: string, baseUrl: string): ExtractedData | null {
+  console.log('Extracting product data from HTML');
+  
   try {
-    // Try to extract JSON-LD structured data first
-    const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gis);
-    let structuredData = null;
+    // Extract title - Multiple methods
+    let title = '';
     
+    // Method 1: Try JSON-LD structured data
+    const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gis);
     if (jsonLdMatch) {
       for (const match of jsonLdMatch) {
         try {
           const jsonContent = match.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');
           const data = JSON.parse(jsonContent);
-          if (data['@type'] === 'Product' || (Array.isArray(data) && data.some(item => item['@type'] === 'Product'))) {
-            structuredData = Array.isArray(data) ? data.find(item => item['@type'] === 'Product') : data;
-            break;
+          if (data['@type'] === 'Product' || (Array.isArray(data) && data.some((item: any) => item['@type'] === 'Product'))) {
+            const product = Array.isArray(data) ? data.find((item: any) => item['@type'] === 'Product') : data;
+            if (product?.name) {
+              title = product.name;
+              break;
+            }
           }
         } catch (e) {
-          console.log('Failed to parse JSON-LD:', e);
+          // Continue to next JSON-LD block
         }
       }
     }
-
-    // Extract title
-    let title = '';
-    if (structuredData?.name) {
-      title = structuredData.name;
-    } else {
+    
+    // Method 2: Try meta og:title
+    if (!title) {
+      const ogTitleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"[^>]*>/i);
+      if (ogTitleMatch) {
+        title = ogTitleMatch[1];
+      }
+    }
+    
+    // Method 3: Try page title
+    if (!title) {
       const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
       if (titleMatch) {
         title = titleMatch[1].replace(/&[^;]+;/g, '').trim();
       }
     }
-
-    // Extract price
-    let price = 0;
-    let currency = 'DZD';
-    if (structuredData?.offers) {
-      const offer = Array.isArray(structuredData.offers) ? structuredData.offers[0] : structuredData.offers;
-      if (offer.price) {
-        price = parseFloat(offer.price);
-        currency = offer.priceCurrency || 'DZD';
+    
+    // Method 4: Try h1 tags
+    if (!title) {
+      const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      if (h1Match) {
+        title = h1Match[1].replace(/<[^>]*>/g, '').trim();
       }
-    } else {
-      // Try to find price in meta tags or common price selectors
-      const pricePatterns = [
-        // Patterns spécifiques à l'Algérie (DA, DZD, dinars)
-        /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*(?:DA|DZD|د\.ج)/gi,
-        /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*dinars?/gi,
-        
-        // Patterns JSON et meta
-        /"price":\s*"?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)"?/gi,
-        /"amount":\s*"?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)"?/gi,
-        
-        // Patterns CSS classes communes pour l'e-commerce
-        /class="[^"]*price[^"]*"[^>]*>\s*[^0-9]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)/gi,
-        /prix[^>]*>\s*[^0-9]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)/gi,
-        /montant[^>]*>\s*[^0-9]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)/gi,
-        
-        // Patterns spécifiques aux sites algériens
-        /jumia\.com\.dz.*?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*DA/gi,
-        /ouedkniss\.com.*?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*DA/gi,
-        
-        // Patterns génériques avec plus de contexte
-        /(\d{1,6}(?:[,\s]\d{3})*)\s*(?:DA|DZD|د\.ج|dinars?)/gi
-      ];
+    }
+
+    console.log('Extracted title:', title);
+
+    // Extract price - Enhanced for Algerian sites
+    let price = 0;
+    const pricePatterns = [
+      // Patterns spécifiques à l'Algérie
+      /(\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*(?:DA|DZD|د\.ج)/gi,
+      /(\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*dinars?/gi,
       
-      let maxPrice = 0;
-      for (const pattern of pricePatterns) {
-        const matches = Array.from(html.matchAll(pattern));
-        if (matches.length > 0) {
-          for (const match of matches) {
-            const priceStr = match[1];
-            if (priceStr) {
-              // Nettoyer et convertir le prix
-              const cleanPrice = priceStr.replace(/[,\s]/g, '');
-              const extractedPrice = parseFloat(cleanPrice);
-              
-              // Prendre le prix le plus élevé trouvé (souvent le prix réel vs prix barré)
-              if (extractedPrice > maxPrice && extractedPrice > 10) {
-                maxPrice = extractedPrice;
-              }
-            }
+      // Patterns JSON et structured data
+      /"price":\s*"?(\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)"?/gi,
+      /"amount":\s*"?(\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)"?/gi,
+      
+      // Patterns meta tags
+      /content="[^"]*(\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)[^"]*DA"/gi,
+      
+      // Patterns génériques avec devises algériennes
+      /prix[^>]*>\s*[^0-9]*(\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)/gi
+    ];
+    
+    let maxPrice = 0;
+    for (const pattern of pricePatterns) {
+      const matches = Array.from(html.matchAll(pattern));
+      for (const match of matches) {
+        const priceStr = match[1];
+        if (priceStr) {
+          const cleanPrice = priceStr.replace(/[,\s]/g, '');
+          const extractedPrice = parseFloat(cleanPrice);
+          
+          if (extractedPrice > maxPrice && extractedPrice > 10 && extractedPrice < 10000000) {
+            maxPrice = extractedPrice;
           }
         }
       }
-      
-      if (maxPrice > 0) {
-        price = maxPrice;
-        console.log(`Prix extrait: ${price} DA`);
-      }
+    }
+    
+    if (maxPrice > 0) {
+      price = maxPrice;
+      console.log(`Prix extrait: ${price} DA`);
     }
 
     // Extract description
     let description = '';
-    if (structuredData?.description) {
-      description = structuredData.description;
-    } else {
-      const metaDesc = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i);
-      if (metaDesc) {
-        description = metaDesc[1];
-      } else {
-        // Try to find product description in common containers
-        const descPatterns = [
-          /<div[^>]*class="[^"]*description[^"]*"[^>]*>(.*?)<\/div>/gis,
-          /<p[^>]*class="[^"]*description[^"]*"[^>]*>(.*?)<\/p>/gis
-        ];
-        
-        for (const pattern of descPatterns) {
-          const match = html.match(pattern);
-          if (match) {
-            description = match[1].replace(/<[^>]*>/g, '').trim();
-            break;
-          }
-        }
+    
+    // Method 1: Try meta description
+    const metaDescMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i);
+    if (metaDescMatch) {
+      description = metaDescMatch[1];
+    }
+    
+    // Method 2: Try og:description
+    if (!description) {
+      const ogDescMatch = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"[^>]*>/i);
+      if (ogDescMatch) {
+        description = ogDescMatch[1];
       }
     }
 
-    // Enhanced image extraction
+    console.log('Extracted description length:', description.length);
+
+    // Enhanced image extraction using regex only
     const images: Array<{url: string, alt?: string}> = [];
     
-    // Try JSON-LD first
-    if (structuredData?.image) {
-      const imageUrls = Array.isArray(structuredData.image) ? structuredData.image : [structuredData.image];
-      for (const img of imageUrls) {
-        const url = typeof img === 'string' ? img : img.url || img['@id'];
-        if (url) {
-          images.push({
-            url: resolveUrl(url, baseUrl),
-            alt: typeof img === 'object' ? img.name || img.caption : 'Product image'
-          });
-        }
-      }
-    }
-
-    // Enhanced image extraction - Multiple patterns for e-commerce sites
-    const imageSelectors = [
-      'img[src*="product"]',
-      'img[alt*="product"]', 
-      '.product-image img',
-      '.gallery img',
-      '.product-gallery img',
-      '.product-photos img',
-      '.slider img',
-      '.carousel img',
-      '[data-src*="product"]',
-      'img[src*="unsafe/fit-in"]', // Jumia specific
-      'img[src*="/product/"]',
-      '.product-slider img',
-      '.main-product-image img',
-      '.thumbnail img',
-      '.zoom img',
-      'img[data-original*="product"]'
-    ];
-
-    // Use cheerio to extract images with selectors
-    const $ = cheerio.load(html);
-    imageSelectors.forEach(selector => {
-      $(selector).each((_, img) => {
-        const src = $(img).attr('src') || $(img).attr('data-src') || $(img).attr('data-original');
-        const alt = $(img).attr('alt') || 'Product image';
+    // Pattern pour extraire toutes les balises img
+    const imgPattern = /<img[^>]*>/gi;
+    const imgMatches = html.match(imgPattern);
+    
+    if (imgMatches) {
+      console.log(`Found ${imgMatches.length} img tags`);
+      
+      for (const imgTag of imgMatches) {
+        // Extraire l'URL src
+        const srcMatch = imgTag.match(/src="([^"]*)"/i);
+        const dataSrcMatch = imgTag.match(/data-src="([^"]*)"/i);
+        const dataOriginalMatch = imgTag.match(/data-original="([^"]*)"/i);
         
-        if (src && src.startsWith('http') && 
-            !images.find(existing => existing.url === src) &&
-            !src.includes('gif') && // Skip animated gifs
-            !src.includes('sprite') && // Skip sprites
-            !src.includes('icon') && // Skip icons
-            src.length > 30 // Skip very short URLs
-        ) {
-          images.push({
-            url: src,
-            alt: alt
-          });
-        }
-      });
-    });
-
-    // Regex fallback for additional images from raw HTML
-    if (images.length < 5) {
-      const imgMatches = html.match(/<img[^>]*>/gi);
-      if (imgMatches) {
-        for (const match of imgMatches.slice(0, 15)) {
-          const srcMatch = match.match(/src="([^"]*)"/);
-          const altMatch = match.match(/alt="([^"]*)"/);
-          if (srcMatch) {
-            const imageUrl = resolveUrl(srcMatch[1], baseUrl);
-            if ((imageUrl.includes('product') || imageUrl.includes('unsafe/fit-in') || 
-                imageUrl.includes('/img/') || imageUrl.includes('media')) && 
-                !imageUrl.includes('logo') && !imageUrl.includes('icon') &&
-                !imageUrl.includes('sprite') && imageUrl.length > 30 &&
-                !images.find(existing => existing.url === imageUrl)) {
-              images.push({
-                url: imageUrl,
-                alt: altMatch ? altMatch[1] : 'Product image'
-              });
+        // Extraire l'alt text
+        const altMatch = imgTag.match(/alt="([^"]*)"/i);
+        
+        const src = srcMatch?.[1] || dataSrcMatch?.[1] || dataOriginalMatch?.[1];
+        const alt = altMatch?.[1] || 'Product image';
+        
+        if (src) {
+          let imageUrl = src;
+          
+          // Résoudre les URLs relatives
+          if (!src.startsWith('http')) {
+            try {
+              const base = new URL(baseUrl);
+              imageUrl = new URL(src, base).href;
+            } catch {
+              continue;
             }
           }
-        }
-      }
-    }
-
-    console.log(`Successfully extracted ${images.length} images:`, images.map(img => img.url));
-
-    // Extract reviews
-    const reviews: Array<{rating: number, comment: string, author?: string}> = [];
-    if (structuredData?.review || structuredData?.aggregateRating) {
-      // Try to extract reviews from structured data
-      const reviewsData = structuredData.review;
-      if (Array.isArray(reviewsData)) {
-        for (const review of reviewsData.slice(0, 5)) {
-          if (review.reviewRating && review.reviewBody) {
-            reviews.push({
-              rating: parseFloat(review.reviewRating.ratingValue || review.reviewRating),
-              comment: review.reviewBody,
-              author: review.author?.name || review.author
+          
+          // Filtrer les images pertinentes
+          const isRelevant = (
+            // Contient "product" dans l'URL ou l'alt
+            (imageUrl.toLowerCase().includes('product') || alt.toLowerCase().includes('product')) ||
+            // Spécifique à Jumia
+            imageUrl.includes('unsafe/fit-in') ||
+            // URLs contenant des mots-clés d'images produit
+            imageUrl.includes('/img/') || 
+            imageUrl.includes('/images/') ||
+            imageUrl.includes('media')
+          );
+          
+          const isNotIcon = (
+            !imageUrl.includes('logo') &&
+            !imageUrl.includes('icon') &&
+            !imageUrl.includes('sprite') &&
+            !imageUrl.includes('.gif') &&
+            imageUrl.length > 30
+          );
+          
+          if (isRelevant && isNotIcon && !images.find(existing => existing.url === imageUrl)) {
+            images.push({
+              url: imageUrl,
+              alt: alt
             });
           }
         }
       }
     }
 
-    // Generate some basic tags from title and description
-    const tags = generateTags(title, description);
+    console.log(`Successfully extracted ${images.length} images`);
 
-    if (!title && !price && !description) {
+    // Validation - nous avons besoin d'au moins un titre
+    if (!title || title.length < 3) {
+      console.error('Could not extract valid title');
       return null;
     }
 
-    return {
-      title: title || 'Produit importé',
+    const result = {
+      title: title.trim(),
       price: price,
-      currency: currency,
-      description: description || 'Description à compléter',
-      images,
-      tags,
-      reviews: reviews.length > 0 ? reviews : undefined
+      currency: 'DZD',
+      description: description.trim() || 'Description à compléter',
+      images: images,
+      tags: generateTags(title, description),
+      reviews: undefined
     };
+
+    console.log('Final extracted data:', {
+      title: result.title,
+      price: result.price,
+      description: result.description.substring(0, 100),
+      imageCount: result.images.length
+    });
+
+    return result;
 
   } catch (error) {
     console.error('Error extracting product data:', error);
     return null;
-  }
-}
-
-function resolveUrl(url: string, baseUrl: string): string {
-  try {
-    if (url.startsWith('http')) {
-      return url;
-    }
-    const base = new URL(baseUrl);
-    return new URL(url, base).href;
-  } catch {
-    return url;
   }
 }
 
@@ -393,7 +348,8 @@ function generateTags(title: string, description: string): string[] {
   const commonTags = [
     'électronique', 'mode', 'beauté', 'maison', 'sport', 'cuisine', 'high-tech',
     'smartphone', 'ordinateur', 'accessoire', 'vêtement', 'chaussure', 'sac',
-    'cosmétique', 'parfum', 'skincare', 'décoration', 'meuble', 'jardin'
+    'cosmétique', 'parfum', 'skincare', 'décoration', 'meuble', 'jardin',
+    'tv', 'television', 'google', 'android', 'brandt'
   ];
   
   return commonTags.filter(tag => text.includes(tag)).slice(0, 5);
@@ -408,10 +364,11 @@ async function enhanceWithAI(extractedData: ExtractedData): Promise<AIGeneratedC
       seo_title: `${extractedData.title} - Achat en Ligne (Algérie)`,
       seo_description: `${extractedData.description.slice(0, 120)}... Livraison rapide en Algérie.`,
       bullet_benefits: [
-        'Produit de qualité',
-        'Livraison rapide',
-        'Service client réactif'
-      ]
+        'Produit de qualité premium',
+        'Livraison rapide en Algérie',
+        'Garantie satisfaction client'
+      ],
+      category_suggestion: 'Produits e-commerce'
     };
   }
 
@@ -453,7 +410,7 @@ Réponds en JSON avec cette structure:
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 1000,
+        max_completion_tokens: 1000,
         temperature: 0.7,
       }),
     });
