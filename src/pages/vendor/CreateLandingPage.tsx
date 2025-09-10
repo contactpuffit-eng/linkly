@@ -18,7 +18,9 @@ import {
   Star,
   Zap,
   Heart,
-  Crown
+  Crown,
+  Package,
+  Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,9 +97,11 @@ const themes: LandingPageTheme[] = [
 
 export default function CreateLandingPage() {
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
-  const [step, setStep] = useState<'product' | 'theme' | 'customize' | 'generate'>('product');
+  const [step, setStep] = useState<'product' | 'theme' | 'customize' | 'generate' | 'create-with-ai' | 'select-existing'>('product');
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [aiUrl, setAiUrl] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const [formData, setFormData] = useState({
     productName: '',
     description: '',
@@ -124,6 +128,66 @@ export default function CreateLandingPage() {
     
     fetchProducts();
   }, []);
+
+  const importProductWithAI = async () => {
+    setAiLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-import-product', {
+        body: { url: aiUrl }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        // Ajouter le produit à la base de données
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .insert({
+            title: data.product.title,
+            description: data.product.description,
+            price: data.product.price,
+            commission_pct: 15,
+            category: data.product.category || 'other',
+            vendor_id: null,
+            media_url: data.product.images?.[0] || null,
+            is_active: true
+          })
+          .select()
+          .single();
+
+        if (productError) throw productError;
+
+        toast({
+          title: "Produit créé avec l'IA !",
+          description: "Le produit a été importé et ajouté à votre catalogue",
+        });
+
+        // Utiliser ce produit pour la landing page
+        setSelectedProduct(productData.id);
+        setFormData({
+          ...formData,
+          productName: data.product.title,
+          description: data.product.description,
+          price: data.product.price.toString()
+        });
+        setStep('theme');
+        
+      } else {
+        throw new Error(data.error || "Échec de l'import IA");
+      }
+      
+    } catch (error) {
+      console.error('Error importing product:', error);
+      toast({
+        title: "Erreur d'import IA",
+        description: "Impossible d'importer le produit depuis cette URL. Vérifiez le lien et réessayez.",
+        variant: "destructive"
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleProductSelect = (productId: string) => {
     const product = products.find(p => p.id === productId);
@@ -178,7 +242,151 @@ export default function CreateLandingPage() {
             Choisir un produit
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Sélectionnez le produit pour lequel vous souhaitez créer une landing page
+            Sélectionnez un produit existant ou créez-en un nouveau avec l'IA
+          </p>
+        </div>
+
+        {/* Options principales */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-8">
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
+                onClick={() => setStep('create-with-ai')}>
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-xl">Créer avec l'IA</CardTitle>
+              <p className="text-muted-foreground">
+                Fournissez un lien produit et l'IA créera automatiquement le produit et la landing page
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full bg-gradient-primary hover:opacity-90">
+                <Wand2 className="w-4 h-4 mr-2" />
+                Commencer avec l'IA
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50">
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Package className="w-8 h-8 text-primary" />
+              </div>
+              <CardTitle className="text-xl">Produit existant</CardTitle>
+              <p className="text-muted-foreground">
+                Utilisez un produit déjà présent dans votre catalogue
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" 
+                      disabled={products.length === 0}
+                      onClick={() => setStep('select-existing')}>
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Choisir un produit
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {products.length === 0 && (
+          <div className="text-center py-8">
+            <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto">
+              <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">Aucun produit dans le catalogue</h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                Créez votre premier produit avec l'IA ou ajoutez-en un manuellement
+              </p>
+              <Button variant="outline" onClick={() => window.location.href = '/vendor/products'}>
+                Gérer les produits
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (step === 'create-with-ai') {
+    return (
+      <div className="container max-w-2xl mx-auto p-6 space-y-8">
+        <div className="text-center space-y-4">
+          <Button variant="ghost" onClick={() => setStep('product')} className="mb-4">
+            ← Retour
+          </Button>
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Créer un produit avec l'IA
+          </h1>
+          <p className="text-muted-foreground">
+            Collez le lien de votre produit et l'IA extraira automatiquement toutes les informations
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Sparkles className="w-5 h-5 mr-2" />
+              Import intelligent par IA
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <Label htmlFor="ai-url">URL du produit *</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="ai-url"
+                  value={aiUrl}
+                  onChange={(e) => setAiUrl(e.target.value)}
+                  placeholder="https://example.com/produit-123"
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={importProductWithAI}
+                  disabled={!aiUrl || aiLoading}
+                  className="bg-gradient-primary hover:opacity-90"
+                >
+                  {aiLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Import...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 mr-2" />
+                      Importer
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h4 className="font-medium text-sm">L'IA peut extraire:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-500" /> Titre et description du produit</li>
+                <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-500" /> Prix et devise</li>
+                <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-500" /> Images principales</li>
+                <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-500" /> Catégorie appropriée</li>
+                <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-500" /> Mots-clés et tags</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (step === 'select-existing') {
+    return (
+      <div className="container max-w-6xl mx-auto p-6 space-y-8">
+        <div className="text-center space-y-4">
+          <Button variant="ghost" onClick={() => setStep('product')} className="mb-4">
+            ← Retour
+          </Button>
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Sélectionner un produit
+          </h1>
+          <p className="text-muted-foreground">
+            Choisissez le produit pour lequel créer une landing page
           </p>
         </div>
 
@@ -217,19 +425,6 @@ export default function CreateLandingPage() {
             </Card>
           ))}
         </div>
-
-        {products.length === 0 && (
-          <div className="text-center py-12">
-            <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Aucun produit trouvé</h3>
-            <p className="text-muted-foreground mb-4">
-              Vous devez d'abord ajouter des produits à votre catalogue
-            </p>
-            <Button onClick={() => window.location.href = '/vendor/products'}>
-              Gérer les produits
-            </Button>
-          </div>
-        )}
       </div>
     );
   }
