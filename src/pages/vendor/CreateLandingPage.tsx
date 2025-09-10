@@ -144,13 +144,13 @@ export default function CreateLandingPage() {
         const { data: productData, error: productError } = await supabase
           .from('products')
           .insert({
-            title: data.product.title,
-            description: data.product.description,
-            price: data.product.price,
+            title: data.extracted.title,
+            description: data.extracted.description,
+            price: data.extracted.price,
             commission_pct: 15,
-            category: data.product.category || 'other',
+            category: data.extracted.category || 'other',
             vendor_id: null,
-            media_url: data.product.images?.[0] || null,
+            media_url: data.extracted.images?.[1]?.url || data.extracted.images?.[0]?.url || null,
             is_active: true
           })
           .select()
@@ -167,9 +167,9 @@ export default function CreateLandingPage() {
         setSelectedProduct(productData.id);
         setFormData({
           ...formData,
-          productName: data.product.title,
-          description: data.product.description,
-          price: data.product.price.toString()
+          productName: data.extracted.title,
+          description: data.extracted.description,
+          price: data.extracted.price.toString()
         });
         setStep('theme');
         
