@@ -250,9 +250,10 @@ function extractProductData(html: string, baseUrl: string): ExtractedData | null
       }
     }
 
-    // Extract images
+    // Enhanced image extraction
     const images: Array<{url: string, alt?: string}> = [];
     
+    // Try JSON-LD first
     if (structuredData?.image) {
       const imageUrls = Array.isArray(structuredData.image) ? structuredData.image : [structuredData.image];
       for (const img of imageUrls) {
@@ -260,30 +261,79 @@ function extractProductData(html: string, baseUrl: string): ExtractedData | null
         if (url) {
           images.push({
             url: resolveUrl(url, baseUrl),
-            alt: typeof img === 'object' ? img.name || img.caption : undefined
+            alt: typeof img === 'object' ? img.name || img.caption : 'Product image'
           });
         }
       }
-    } else {
-      // Extract images from img tags
-      const imgMatches = html.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi);
+    }
+
+    // Enhanced image extraction - Multiple patterns for e-commerce sites
+    const imageSelectors = [
+      'img[src*="product"]',
+      'img[alt*="product"]', 
+      '.product-image img',
+      '.gallery img',
+      '.product-gallery img',
+      '.product-photos img',
+      '.slider img',
+      '.carousel img',
+      '[data-src*="product"]',
+      'img[src*="unsafe/fit-in"]', // Jumia specific
+      'img[src*="/product/"]',
+      '.product-slider img',
+      '.main-product-image img',
+      '.thumbnail img',
+      '.zoom img',
+      'img[data-original*="product"]'
+    ];
+
+    // Use cheerio to extract images with selectors
+    const $ = cheerio.load(html);
+    imageSelectors.forEach(selector => {
+      $(selector).each((_, img) => {
+        const src = $(img).attr('src') || $(img).attr('data-src') || $(img).attr('data-original');
+        const alt = $(img).attr('alt') || 'Product image';
+        
+        if (src && src.startsWith('http') && 
+            !images.find(existing => existing.url === src) &&
+            !src.includes('gif') && // Skip animated gifs
+            !src.includes('sprite') && // Skip sprites
+            !src.includes('icon') && // Skip icons
+            src.length > 30 // Skip very short URLs
+        ) {
+          images.push({
+            url: src,
+            alt: alt
+          });
+        }
+      });
+    });
+
+    // Regex fallback for additional images from raw HTML
+    if (images.length < 5) {
+      const imgMatches = html.match(/<img[^>]*>/gi);
       if (imgMatches) {
-        for (const match of imgMatches.slice(0, 5)) { // Limit to 5 images
+        for (const match of imgMatches.slice(0, 15)) {
           const srcMatch = match.match(/src="([^"]*)"/);
           const altMatch = match.match(/alt="([^"]*)"/);
           if (srcMatch) {
             const imageUrl = resolveUrl(srcMatch[1], baseUrl);
-            if (imageUrl.includes('product') || imageUrl.includes('img') || 
-                !imageUrl.includes('logo') && !imageUrl.includes('icon')) {
+            if ((imageUrl.includes('product') || imageUrl.includes('unsafe/fit-in') || 
+                imageUrl.includes('/img/') || imageUrl.includes('media')) && 
+                !imageUrl.includes('logo') && !imageUrl.includes('icon') &&
+                !imageUrl.includes('sprite') && imageUrl.length > 30 &&
+                !images.find(existing => existing.url === imageUrl)) {
               images.push({
                 url: imageUrl,
-                alt: altMatch ? altMatch[1] : undefined
+                alt: altMatch ? altMatch[1] : 'Product image'
               });
             }
           }
         }
       }
     }
+
+    console.log(`Successfully extracted ${images.length} images:`, images.map(img => img.url));
 
     // Extract reviews
     const reviews: Array<{rating: number, comment: string, author?: string}> = [];
