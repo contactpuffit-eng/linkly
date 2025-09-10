@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { AIImportPanel } from '@/components/vendor/create-product/AIImportPanel';
+import { MediaManager } from './MediaManager';
 import { 
   Eye, 
   Monitor, 
@@ -48,7 +49,9 @@ export const CustomizeStep = ({ selectedProduct, selectedTheme, onNext, onBack }
     productUrl: '',
     // Données IA importées
     aiImages: [] as any[],
-    aiData: null as any
+    aiData: null as any,
+    // Médias sélectionnés
+    selectedMedia: [] as any[]
   });
 
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
@@ -198,7 +201,16 @@ export const CustomizeStep = ({ selectedProduct, selectedTheme, onNext, onBack }
         {/* Customization Form */}
         <div className="space-y-6">
           {/* Import IA */}
-          <Card>
+              {/* Gestion des médias */}
+              {(formData.aiImages.length > 0 || formData.selectedMedia.length > 0) && (
+                <MediaManager
+                  aiImages={formData.aiImages}
+                  selectedMedia={formData.selectedMedia}
+                  onMediaChange={(media) => setFormData({...formData, selectedMedia: media})}
+                />
+              )}
+
+              <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Globe className="w-5 h-5 mr-2" />

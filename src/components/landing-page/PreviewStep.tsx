@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Eye, 
   Monitor, 
@@ -22,7 +23,8 @@ import {
   ThumbsUp,
   Wand2,
   Copy,
-  Edit
+  Edit,
+  Check
 } from 'lucide-react';
 
 interface PreviewStepProps {
@@ -64,8 +66,55 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
   };
 
   const handleOpenPreview = () => {
-    const landingUrl = `/p/${customization.productName.toLowerCase().replace(/\s+/g, '-')}`;
+    const landingUrl = `/landing/${customization.productName.toLowerCase().replace(/\s+/g, '-')}`;
     window.open(landingUrl, '_blank');
+  };
+
+  const handlePublishLanding = async () => {
+    try {
+      // Générer un slug unique
+      const { data: slugData, error: slugError } = await supabase
+        .rpc('generate_unique_slug', {
+          title_text: customization.productName,
+          vendor_uuid: 'vendor-id' // TODO: Remplacer par l'ID du vendeur authentifié
+        });
+
+      if (slugError) throw slugError;
+
+      // Sauvegarder la landing page
+      const { data, error } = await supabase
+        .from('landing_pages')
+        .insert({
+          vendor_id: 'vendor-id', // TODO: Remplacer par l'ID du vendeur authentifié
+          product_id: selectedProduct.id,
+          title: customization.productName,
+          slug: slugData,
+          theme_id: selectedTheme,
+          customization: customization,
+          ai_data: customization.aiData,
+          media_urls: customization.selectedMedia || [],
+          is_published: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Landing page créée !",
+        description: "Votre landing page a été sauvegardée et publiée",
+      });
+
+      // Rediriger vers la liste des landing pages
+      window.location.href = '/vendor/landing-pages';
+    } catch (error) {
+      console.error('Error publishing landing page:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de publier la landing page",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isGenerating) {
@@ -225,20 +274,20 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
                             )}
                           </div>
                           
-                          {/* Image Thumbnails */}
-                          {customization.aiImages && customization.aiImages.length > 1 && (
-                            <div className="grid grid-cols-4 gap-2">
-                              {customization.aiImages.slice(0, 4).map((img: any, idx: number) => (
-                                <div key={idx} className="aspect-square bg-white rounded-lg shadow overflow-hidden">
-                                  <img 
-                                    src={img.url} 
-                                    alt={img.alt}
-                                    className="w-full h-full object-cover hover:opacity-80 transition-opacity cursor-pointer"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                        {/* Image Thumbnails */}
+                        {(customization.selectedMedia && customization.selectedMedia.length > 1) && (
+                          <div className="grid grid-cols-4 gap-2">
+                            {customization.selectedMedia.slice(0, 4).map((img: any, idx: number) => (
+                              <div key={idx} className="aspect-square bg-white rounded-lg shadow overflow-hidden">
+                                <img 
+                                  src={img.url} 
+                                  alt={img.alt}
+                                  className="w-full h-full object-cover hover:opacity-80 transition-opacity cursor-pointer"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         </div>
 
                         {/* Product Info & CTA */}
@@ -401,6 +450,14 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Ouvrir la landing page
+              </Button>
+              
+              <Button 
+                onClick={handlePublishLanding}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Publier la landing page
               </Button>
               
               <Button 

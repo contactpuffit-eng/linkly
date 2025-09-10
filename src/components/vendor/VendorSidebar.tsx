@@ -35,6 +35,7 @@ const menuItems = [
   { title: 'Vue d\'ensemble', url: '/vendor', icon: BarChart3 },
   { title: 'Gérer Produits', url: '/vendor/products', icon: Package },
   { title: 'Créer Landing Page IA', url: '/vendor/ai-landing', icon: Wand2 },
+  { title: 'Mes Landing Pages', url: '/vendor/landing-pages', icon: FileText },
   { title: 'Commandes', url: '/vendor/orders', icon: ShoppingCart },
   { title: 'Gestion Stock', url: '/vendor/stock', icon: Package },
   { title: 'Commissions', url: '/vendor/commissions', icon: DollarSign },
