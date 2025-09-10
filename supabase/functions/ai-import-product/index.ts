@@ -224,7 +224,6 @@ function extractProductData(html: string, baseUrl: string): ExtractedData | null
         console.log(`Prix extrait: ${price} DA`);
       }
     }
-    }
 
     // Extract description
     let description = '';
