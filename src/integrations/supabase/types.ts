@@ -245,48 +245,69 @@ export type Database = {
           commission_pct: number
           created_at: string | null
           description: string | null
+          dimensions: string | null
           id: string
           is_active: boolean | null
           media_url: string | null
+          min_stock_alert: number | null
           price: number
           restaurant_address: string | null
           restaurant_phone: string | null
+          shipping_class: string | null
+          sku: string | null
+          stock_quantity: number | null
           title: string
           updated_at: string | null
+          variants: Json | null
           vendor_id: string | null
           website_url: string | null
+          weight: number | null
         }
         Insert: {
           category?: Database["public"]["Enums"]["product_category"] | null
           commission_pct: number
           created_at?: string | null
           description?: string | null
+          dimensions?: string | null
           id?: string
           is_active?: boolean | null
           media_url?: string | null
+          min_stock_alert?: number | null
           price: number
           restaurant_address?: string | null
           restaurant_phone?: string | null
+          shipping_class?: string | null
+          sku?: string | null
+          stock_quantity?: number | null
           title: string
           updated_at?: string | null
+          variants?: Json | null
           vendor_id?: string | null
           website_url?: string | null
+          weight?: number | null
         }
         Update: {
           category?: Database["public"]["Enums"]["product_category"] | null
           commission_pct?: number
           created_at?: string | null
           description?: string | null
+          dimensions?: string | null
           id?: string
           is_active?: boolean | null
           media_url?: string | null
+          min_stock_alert?: number | null
           price?: number
           restaurant_address?: string | null
           restaurant_phone?: string | null
+          shipping_class?: string | null
+          sku?: string | null
+          stock_quantity?: number | null
           title?: string
           updated_at?: string | null
+          variants?: Json | null
           vendor_id?: string | null
           website_url?: string | null
+          weight?: number | null
         }
         Relationships: [
           {
@@ -384,6 +405,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stock_movements: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          movement_type: string
+          order_id: string | null
+          product_id: string
+          quantity: number
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          movement_type: string
+          order_id?: string | null
+          product_id: string
+          quantity: number
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          movement_type?: string
+          order_id?: string | null
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_shipping_settings: {
+        Row: {
+          base_shipping_cost: number | null
+          created_at: string | null
+          express_shipping_cost: number | null
+          free_shipping_threshold: number | null
+          id: string
+          processing_days: number | null
+          updated_at: string | null
+          vendor_id: string
+        }
+        Insert: {
+          base_shipping_cost?: number | null
+          created_at?: string | null
+          express_shipping_cost?: number | null
+          free_shipping_threshold?: number | null
+          id?: string
+          processing_days?: number | null
+          updated_at?: string | null
+          vendor_id: string
+        }
+        Update: {
+          base_shipping_cost?: number | null
+          created_at?: string | null
+          express_shipping_cost?: number | null
+          free_shipping_threshold?: number | null
+          id?: string
+          processing_days?: number | null
+          updated_at?: string | null
+          vendor_id?: string
+        }
+        Relationships: []
       }
       wallets: {
         Row: {

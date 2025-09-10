@@ -11,6 +11,10 @@ import VendorProducts from "./pages/vendor/VendorProducts";
 import ProductCatalog from "./pages/vendor/ProductCatalog";
 import CreateLandingPage from "./pages/vendor/CreateLandingPage";
 import CreateProduct from "./pages/vendor/CreateProduct";
+import OrdersManagement from "./pages/vendor/OrdersManagement";
+import StockManagement from "./pages/vendor/StockManagement";
+import ShippingSettings from "./pages/vendor/ShippingSettings";
+import CommissionManagement from "./pages/vendor/CommissionManagement";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateLinkInBio from "./pages/AffiliateLinkInBio";
 import LandingPage from "./pages/LandingPage";
@@ -56,6 +60,26 @@ const App = () => (
           <Route path="/vendor/products/create" element={
             <VendorLayout>
               <CreateProduct />
+            </VendorLayout>
+          } />
+          <Route path="/vendor/orders" element={
+            <VendorLayout>
+              <OrdersManagement />
+            </VendorLayout>
+          } />
+          <Route path="/vendor/stock" element={
+            <VendorLayout>
+              <StockManagement />
+            </VendorLayout>
+          } />
+          <Route path="/vendor/shipping" element={
+            <VendorLayout>
+              <ShippingSettings />
+            </VendorLayout>
+          } />
+          <Route path="/vendor/commissions" element={
+            <VendorLayout>
+              <CommissionManagement />
             </VendorLayout>
           } />
           <Route path="/vendor/*" element={
