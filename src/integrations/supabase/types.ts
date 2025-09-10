@@ -155,48 +155,72 @@ export type Database = {
           affiliate_id: string | null
           amount: number
           commission_amount: number | null
+          commune: string | null
           created_at: string | null
+          customer_address: string | null
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
           id: string
           is_returned: boolean | null
+          notes: string | null
+          payment_method: string | null
           product_id: string
+          quantity: number | null
           return_reason: string | null
+          shipping_cost: number | null
           status: Database["public"]["Enums"]["order_status"] | null
+          tracking_number: string | null
           updated_at: string | null
+          wilaya: string | null
         }
         Insert: {
           affiliate_code?: string | null
           affiliate_id?: string | null
           amount: number
           commission_amount?: number | null
+          commune?: string | null
           created_at?: string | null
+          customer_address?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
           is_returned?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
           product_id: string
+          quantity?: number | null
           return_reason?: string | null
+          shipping_cost?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
+          tracking_number?: string | null
           updated_at?: string | null
+          wilaya?: string | null
         }
         Update: {
           affiliate_code?: string | null
           affiliate_id?: string | null
           amount?: number
           commission_amount?: number | null
+          commune?: string | null
           created_at?: string | null
+          customer_address?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
           is_returned?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
           product_id?: string
+          quantity?: number | null
           return_reason?: string | null
+          shipping_cost?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
+          tracking_number?: string | null
           updated_at?: string | null
+          wilaya?: string | null
         }
         Relationships: [
           {
@@ -395,6 +419,27 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      wilayas: {
+        Row: {
+          code: string
+          id: number
+          name: string
+          shipping_cost: number | null
+        }
+        Insert: {
+          code: string
+          id?: number
+          name: string
+          shipping_cost?: number | null
+        }
+        Update: {
+          code?: string
+          id?: number
+          name?: string
+          shipping_cost?: number | null
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -178,6 +178,51 @@ function extractProductData(html: string, baseUrl: string): ExtractedData | null
     } else {
       // Try to find price in meta tags or common price selectors
       const pricePatterns = [
+        // Patterns spécifiques à l'Algérie (DA, DZD, dinars)
+        /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*(?:DA|DZD|د\.ج)/gi,
+        /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*dinars?/gi,
+        
+        // Patterns JSON et meta
+        /"price":\s*"?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)"?/gi,
+        /"amount":\s*"?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)"?/gi,
+        
+        // Patterns CSS classes communes pour l'e-commerce
+        /class="[^"]*price[^"]*"[^>]*>\s*[^0-9]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)/gi,
+        /prix[^>]*>\s*[^0-9]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)/gi,
+        /montant[^>]*>\s*[^0-9]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)/gi,
+        
+        // Patterns spécifiques aux sites algériens
+        /jumia\.com\.dz.*?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*DA/gi,
+        /ouedkniss\.com.*?(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?)\s*DA/gi,
+        
+        // Patterns génériques avec plus de contexte
+        /(\d{1,6}(?:[,\s]\d{3})*)\s*(?:DA|DZD|د\.ج|dinars?)/gi
+      ];
+      
+      let maxPrice = 0;
+      for (const pattern of pricePatterns) {
+        const matches = Array.from(html.matchAll(pattern));
+        if (matches.length > 0) {
+          for (const match of matches) {
+            const priceStr = match[1];
+            if (priceStr) {
+              // Nettoyer et convertir le prix
+              const cleanPrice = priceStr.replace(/[,\s]/g, '');
+              const extractedPrice = parseFloat(cleanPrice);
+              
+              // Prendre le prix le plus élevé trouvé (souvent le prix réel vs prix barré)
+              if (extractedPrice > maxPrice && extractedPrice > 10) {
+                maxPrice = extractedPrice;
+              }
+            }
+          }
+        }
+      }
+      
+      if (maxPrice > 0) {
+        price = maxPrice;
+        console.log(`Prix extrait: ${price} DA`);
+      }
         /class="[^"]*price[^"]*"[^>]*>.*?([0-9,]+(?:\.[0-9]{2})?)/gi,
         /\$([0-9,]+(?:\.[0-9]{2})?)/g,
         /([0-9,]+(?:\.[0-9]{2})?)\s*(?:DA|DZD|€|USD)/gi

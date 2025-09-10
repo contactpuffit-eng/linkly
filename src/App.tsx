@@ -14,6 +14,9 @@ import CreateProduct from "./pages/vendor/CreateProduct";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateLinkInBio from "./pages/AffiliateLinkInBio";
 import LandingPage from "./pages/LandingPage";
+import OrderPage from "./pages/OrderPage";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +33,9 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/@:username" element={<AffiliateLinkInBio />} />
           <Route path="/p/:slug" element={<LandingPage />} />
+          <Route path="/order/:productId" element={<OrderPage />} />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          <Route path="/track-order" element={<TrackOrder />} />
           
           {/* Vendor routes */}
           <Route path="/vendor" element={
