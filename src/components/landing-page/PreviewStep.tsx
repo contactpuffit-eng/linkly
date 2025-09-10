@@ -8,7 +8,6 @@ import {
   Eye, 
   Monitor, 
   Smartphone, 
-  ArrowLeft,
   ExternalLink,
   Share2,
   Download,
