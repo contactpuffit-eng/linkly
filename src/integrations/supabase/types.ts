@@ -149,6 +149,57 @@ export type Database = {
           },
         ]
       }
+      landing_pages: {
+        Row: {
+          ai_data: Json | null
+          conversions_count: number | null
+          created_at: string
+          customization: Json
+          id: string
+          is_published: boolean | null
+          media_urls: Json | null
+          product_id: string
+          slug: string
+          theme_id: string
+          title: string
+          updated_at: string
+          vendor_id: string
+          views_count: number | null
+        }
+        Insert: {
+          ai_data?: Json | null
+          conversions_count?: number | null
+          created_at?: string
+          customization: Json
+          id?: string
+          is_published?: boolean | null
+          media_urls?: Json | null
+          product_id: string
+          slug: string
+          theme_id: string
+          title: string
+          updated_at?: string
+          vendor_id: string
+          views_count?: number | null
+        }
+        Update: {
+          ai_data?: Json | null
+          conversions_count?: number | null
+          created_at?: string
+          customization?: Json
+          id?: string
+          is_published?: boolean | null
+          media_urls?: Json | null
+          product_id?: string
+          slug?: string
+          theme_id?: string
+          title?: string
+          updated_at?: string
+          vendor_id?: string
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           affiliate_code: string | null
@@ -558,6 +609,10 @@ export type Database = {
       }
       generate_promo_code: {
         Args: { affiliate_uuid: string; product_uuid: string }
+        Returns: string
+      }
+      generate_unique_slug: {
+        Args: { title_text: string; vendor_uuid: string }
         Returns: string
       }
       scan_qr_code: {
