@@ -40,6 +40,7 @@ const AffiliatePageManager = () => {
   const [saving, setSaving] = useState(false);
   const [newSocialLink, setNewSocialLink] = useState<SocialLink>({ platform: '', url: '' });
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [isMockUser, setIsMockUser] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,19 +49,40 @@ const AffiliatePageManager = () => {
 
   const fetchAffiliatePage = async () => {
     try {
-      // Try real auth first, then fallback to mock
       const { data: { user } } = await supabase.auth.getUser();
-      let currentUser = user;
-      
+      let currentUser = user as any;
+
+      // Support mock login (any email/mdp)
       if (!currentUser) {
-        // Check for mock user
         const mockUserData = localStorage.getItem('mock_user');
         if (mockUserData) {
-          currentUser = JSON.parse(mockUserData);
-          console.log('Using mock user:', currentUser);
+          const mock = JSON.parse(mockUserData);
+          currentUser = mock;
+          setIsMockUser(true);
+
+          // Load from localStorage or create a default page
+          const saved = localStorage.getItem('mock_affiliate_page');
+          if (saved) {
+            try { setPage(JSON.parse(saved)); } catch {}
+            return;
+          }
+          const baseName = (mock.email?.split('@')[0] || 'user');
+          const defaultPage: AffiliatePage = {
+            id: 'mock-page',
+            username: `${baseName}`,
+            display_name: baseName,
+            bio: 'Découvrez mes produits recommandés !',
+            avatar_url: '',
+            theme_color: '#3B82F6',
+            is_published: false,
+            social_links: []
+          };
+          localStorage.setItem('mock_affiliate_page', JSON.stringify(defaultPage));
+          setPage(defaultPage);
+          return;
         }
       }
-      
+
       if (!currentUser) {
         setNeedsAuth(true);
         return;
@@ -174,6 +196,15 @@ const AffiliatePageManager = () => {
 
   const handleSave = async () => {
     if (!page) return;
+
+    if (isMockUser) {
+      localStorage.setItem('mock_affiliate_page', JSON.stringify(page));
+      toast({
+        title: "Page sauvegardée !",
+        description: "Vos modifications ont été enregistrées (mode démo).",
+      });
+      return;
+    }
 
     setSaving(true);
     try {
