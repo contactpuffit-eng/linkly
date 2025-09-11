@@ -26,6 +26,7 @@ import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
 import ProductPage from "./pages/ProductPage";
 import SimpleOrderPage from "./pages/SimpleOrderPage";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/@:username" element={<PublicAffiliatePage />} />
           <Route path="/p/:slug" element={<LandingPage />} />
           <Route path="/product/:id" element={<ProductPage />} />

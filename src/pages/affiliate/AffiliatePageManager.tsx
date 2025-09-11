@@ -39,6 +39,7 @@ const AffiliatePageManager = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newSocialLink, setNewSocialLink] = useState<SocialLink>({ platform: '', url: '' });
+  const [needsAuth, setNeedsAuth] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,10 +52,7 @@ const AffiliatePageManager = () => {
       console.log('Current user:', user);
       
       if (!user) {
-        console.log('No user found, using test user');
-        // Pour les tests, utilisons un utilisateur fictif
-        const testUser = { id: '00000000-0000-0000-0000-000000000001', email: 'test@example.com' };
-        await createDefaultPage(testUser);
+        setNeedsAuth(true);
         return;
       }
 
@@ -228,6 +226,18 @@ const AffiliatePageManager = () => {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (needsAuth) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold mb-2">Connexion requise</h2>
+        <p className="text-muted-foreground">Veuillez vous connecter pour gérer votre page affilié.</p>
+        <div className="mt-6">
+          <Button onClick={() => (window.location.href = '/auth')}>Se connecter</Button>
+        </div>
       </div>
     );
   }

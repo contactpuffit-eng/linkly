@@ -123,7 +123,7 @@ const PublicAffiliatePage = () => {
         avatar_url: pageData.avatar_url || '',
         theme_color: pageData.theme_color,
         social_links: socialLinks
-      });
+      } as any);
 
       // Fetch affiliate products
       const { data: productsData, error: productsError } = await supabase
@@ -169,11 +169,11 @@ const PublicAffiliatePage = () => {
 
   const handleProductClick = async (product: Product) => {
     try {
-      // Record click
+      // Record click (best-effort)
       await supabase
         .from('affiliate_link_stats')
         .insert({
-          affiliate_id: page?.id,
+          affiliate_id: (page as any)?.affiliate_id ?? undefined,
           product_id: product.id,
           affiliate_code: product.affiliate_code,
           event_type: 'click',
