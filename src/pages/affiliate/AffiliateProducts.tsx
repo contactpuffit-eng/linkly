@@ -69,20 +69,8 @@ export default function AffiliateProducts() {
     const baseUrl = window.location.origin;
     const affiliateCode = `AFF_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
     
-    // Chercher la landing page associée au produit
-    const { data: landingPage } = await supabase
-      .from('landing_pages')
-      .select('slug')
-      .eq('product_id', productId)
-      .eq('is_published', true)
-      .single();
-    
-    if (landingPage?.slug) {
-      return `${baseUrl}/p/${landingPage.slug}?ref=${affiliateCode}`;
-    }
-    
-    // Fallback vers la page de commande si pas de landing page
-    return `${baseUrl}/order/${productId}?ref=${affiliateCode}`;
+    // Diriger vers la page produit avec le code d'affiliation
+    return `${baseUrl}/product/${productId}?ref=${affiliateCode}`;
   };
 
   const copyAffiliateLink = async (productId: string, productTitle: string) => {

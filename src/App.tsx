@@ -24,6 +24,8 @@ import OrderPage from "./pages/OrderPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
+import ProductPage from "./pages/ProductPage";
+import SimpleOrderPage from "./pages/SimpleOrderPage";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +41,9 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/@:username" element={<AffiliateLinkInBio />} />
           <Route path="/p/:slug" element={<LandingPage />} />
+          <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/order/:productId" element={<OrderPage />} />
+          <Route path="/simple-order/:productId" element={<SimpleOrderPage />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
           <Route path="/track-order" element={<TrackOrder />} />
           
