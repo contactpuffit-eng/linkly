@@ -15,6 +15,7 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  commission_pct: number;
   media_url: string;
 }
 
@@ -74,9 +75,28 @@ export default function SimpleOrderPage() {
     setSubmitting(true);
     
     try {
+      let affiliateId = null;
+      let commissionAmount = 0;
+
+      // Si on a un code d'affiliation, récupérer l'affilié et calculer la commission
+      if (affiliateCode) {
+        const { data: affiliateProduct } = await supabase
+          .from('affiliate_products')
+          .select('affiliate_id')
+          .eq('affiliate_code', affiliateCode)
+          .single();
+
+        if (affiliateProduct) {
+          affiliateId = affiliateProduct.affiliate_id;
+          commissionAmount = (product.price * formData.quantity * product.commission_pct) / 100;
+        }
+      }
+
       const orderData = {
         product_id: product.id,
         affiliate_code: affiliateCode,
+        affiliate_id: affiliateId,
+        commission_amount: commissionAmount,
         customer_name: formData.customerName,
         customer_phone: formData.customerPhone,
         customer_email: formData.customerEmail,
@@ -94,6 +114,47 @@ export default function SimpleOrderPage() {
         .insert(orderData)
         .select()
         .single();
+
+      // Si la commande est créée avec succès et qu'il y a un affilié, mettre à jour son wallet
+      if (!error && affiliateId && commissionAmount > 0) {
+        await supabase
+          .from('wallets')
+          .upsert({
+            user_id: affiliateId,
+            pending_balance: commissionAmount
+          }, {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          });
+        
+        // Mettre aussi à jour la balance pending en ajoutant à l'existant
+        const { data: currentWallet } = await supabase
+          .from('wallets')
+          .select('pending_balance')
+          .eq('user_id', affiliateId)
+          .single();
+
+        if (currentWallet) {
+          await supabase
+            .from('wallets')
+            .update({
+              pending_balance: (currentWallet.pending_balance || 0) + commissionAmount
+            })
+            .eq('user_id', affiliateId);
+        }
+
+        // Enregistrer les stats du lien d'affiliation
+        await supabase
+          .from('affiliate_link_stats')
+          .insert({
+            affiliate_id: affiliateId,
+            product_id: product.id,
+            affiliate_code: affiliateCode,
+            event_type: 'purchase',
+            user_ip: null,
+            user_agent: navigator.userAgent
+          });
+      }
 
       if (error) throw error;
 
