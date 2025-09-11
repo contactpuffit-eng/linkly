@@ -29,27 +29,20 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast({ title: 'Connecté !', description: "Redirection..." });
-        window.location.href = '/affiliate';
-      } else {
-        const redirectUrl = `${window.location.origin}/`;
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: redirectUrl }
-        });
-        if (error) throw error;
-        toast({ title: 'Inscription réussie', description: 'Vérifiez votre email pour confirmer votre compte.' });
-      }
-    } catch (err: any) {
-      toast({ title: 'Erreur', description: err.message || 'Veuillez réessayer.', variant: 'destructive' });
-    } finally {
+    
+    // Simulate login with any credentials
+    setTimeout(() => {
+      const mockUser = {
+        id: 'test-user-' + Math.random().toString(36).substr(2, 9),
+        email: email,
+        created_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem('mock_user', JSON.stringify(mockUser));
+      toast({ title: 'Connecté !', description: "Redirection..." });
       setLoading(false);
-    }
+      window.location.href = '/affiliate';
+    }, 1000);
   };
 
   return (

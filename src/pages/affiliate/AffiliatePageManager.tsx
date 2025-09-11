@@ -48,10 +48,20 @@ const AffiliatePageManager = () => {
 
   const fetchAffiliatePage = async () => {
     try {
+      // Try real auth first, then fallback to mock
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user);
+      let currentUser = user;
       
-      if (!user) {
+      if (!currentUser) {
+        // Check for mock user
+        const mockUserData = localStorage.getItem('mock_user');
+        if (mockUserData) {
+          currentUser = JSON.parse(mockUserData);
+          console.log('Using mock user:', currentUser);
+        }
+      }
+      
+      if (!currentUser) {
         setNeedsAuth(true);
         return;
       }
@@ -59,7 +69,7 @@ const AffiliatePageManager = () => {
       const { data, error } = await supabase
         .from('affiliate_pages')
         .select('*')
-        .eq('affiliate_id', user.id)
+        .eq('affiliate_id', currentUser.id)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -84,7 +94,7 @@ const AffiliatePageManager = () => {
         });
       } else {
         // Create default page
-        await createDefaultPage(user);
+        await createDefaultPage(currentUser);
       }
     } catch (error) {
       console.error('Error:', error);
