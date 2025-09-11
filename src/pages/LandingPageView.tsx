@@ -19,6 +19,7 @@ interface LandingPage {
   id: string;
   title: string;
   slug: string;
+  product_id: string;
   customization: any;
   media_urls: any;
   is_published: boolean;
@@ -27,6 +28,7 @@ interface LandingPage {
 export default function LandingPageView() {
   const { slug } = useParams();
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
+  const [productImage, setProductImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +49,19 @@ export default function LandingPageView() {
       if (error) throw error;
 
       setLandingPage(data);
+
+      // Récupérer l'image du produit associé
+      if (data.product_id) {
+        const { data: productData } = await supabase
+          .from('products')
+          .select('media_url')
+          .eq('id', data.product_id)
+          .single();
+        
+        if (productData?.media_url) {
+          setProductImage(productData.media_url);
+        }
+      }
 
       // Incrémenter le compteur de vues
       await supabase
@@ -71,8 +86,8 @@ export default function LandingPageView() {
         .update({ conversions_count: (landingPage.customization.conversions_count || 0) + 1 })
         .eq('id', landingPage.id);
 
-      // Rediriger vers la page de commande (à implémenter)
-      window.location.href = `/order/${landingPage.slug}`;
+      // Rediriger vers la page de commande
+      window.location.href = `/order/${landingPage.product_id}`;
     } catch (error) {
       console.error('Error handling order:', error);
     }
@@ -100,6 +115,9 @@ export default function LandingPageView() {
   const { customization, media_urls } = landingPage;
   const mediaArray = Array.isArray(media_urls) ? media_urls : [];
   const coverImage = mediaArray.find(img => img.isCover) || mediaArray[0];
+  
+  // Utiliser l'image du produit si pas d'image dans media_urls
+  const displayImage = coverImage || (productImage ? { url: productImage, alt: customization.productName } : null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,10 +158,10 @@ export default function LandingPageView() {
             {/* Main Image */}
             <div className="space-y-6">
               <div className="aspect-square bg-white rounded-2xl shadow-2xl overflow-hidden">
-                {coverImage ? (
+                {displayImage ? (
                   <img 
-                    src={coverImage.url} 
-                    alt={coverImage.alt}
+                    src={displayImage.url} 
+                    alt={displayImage.alt}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
                 ) : (
