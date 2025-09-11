@@ -8,7 +8,6 @@ import {
   Package,
   TrendingUp,
   Link2,
-  QrCode,
   Star,
   Copy,
   ExternalLink
@@ -108,13 +107,55 @@ export default function AffiliateProducts() {
     }
   };
 
-  const copyAffiliateLink = async (productId: string, productTitle: string) => {
-    const link = await generateAffiliateLink(productId);
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Lien copié !",
-      description: `Lien d'affiliation pour "${productTitle}" copié dans le presse-papiers`,
-    });
+  const promoteProduct = async (productId: string, productTitle: string) => {
+    try {
+      // Pour l'instant, on simule un utilisateur affilié
+      const currentUserId = '00000000-0000-0000-0000-000000000001';
+      
+      // Vérifier si un lien existe déjà pour ce produit et cet affilié
+      const { data: existingLink } = await supabase
+        .from('affiliate_products')
+        .select('affiliate_code')
+        .eq('affiliate_id', currentUserId)
+        .eq('product_id', productId)
+        .single();
+
+      if (existingLink) {
+        toast({
+          title: "Déjà promu !",
+          description: `Vous promouvez déjà ce produit. Retrouvez votre lien dans "Mes liens"`,
+        });
+        return;
+      }
+
+      // Créer un nouveau lien d'affiliation
+      const affiliateCode = `AFF_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+      const promoCode = `PROMO_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+      const { error } = await supabase
+        .from('affiliate_products')
+        .insert({
+          affiliate_id: currentUserId,
+          product_id: productId,
+          affiliate_code: affiliateCode,
+          promo_code: promoCode
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Produit ajouté !",
+        description: `"${productTitle}" a été ajouté à vos liens d'affiliation. Retrouvez-le dans "Mes liens"`,
+      });
+
+    } catch (error) {
+      console.error('Erreur promotion produit:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter ce produit à vos liens",
+        variant: "destructive"
+      });
+    }
   };
 
   const filteredProducts = products.filter(product =>
@@ -269,36 +310,26 @@ export default function AffiliateProducts() {
 
                 <div className="space-y-2">
                   <Button 
-                    onClick={() => copyAffiliateLink(product.id, product.title)}
+                    onClick={() => promoteProduct(product.id, product.title)}
                     className="w-full bg-gradient-primary hover:opacity-90"
                     size="sm"
                   >
                     <Copy className="w-4 h-4 mr-2" />
-                    Copier le lien d'affiliation
+                    Promouvoir ce produit
                   </Button>
                   
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={async () => {
-                        const link = await generateAffiliateLink(product.id);
-                        window.open(link, '_blank');
-                      }}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Voir
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                    >
-                      <QrCode className="w-4 h-4 mr-2" />
-                      QR Code
-                    </Button>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={async () => {
+                      const link = await generateAffiliateLink(product.id);
+                      window.open(link, '_blank');
+                    }}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Voir le produit
+                  </Button>
                 </div>
 
                 <div className="mt-3 text-xs text-muted-foreground">
