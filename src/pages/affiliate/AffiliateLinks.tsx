@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
   Link2, 
   Copy, 
-  ExternalLink, 
-  TrendingUp, 
   MousePointer, 
   ShoppingCart,
   DollarSign,
@@ -48,8 +46,16 @@ export default function AffiliateLinks() {
 
   const fetchAffiliateLinks = async () => {
     try {
-      // Pour l'instant, on simule un utilisateur affilié
-      const currentUserId = '00000000-0000-0000-0000-000000000001';
+      // Vérifier si un utilisateur est connecté
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setLinks([]);
+        setLoading(false);
+        return;
+      }
+
+      const currentUserId = user.id;
 
       // Récupérer tous les liens d'affiliation de l'utilisateur
       const { data: affiliateProducts, error: linksError } = await supabase
@@ -210,22 +216,17 @@ export default function AffiliateLinks() {
       </div>
 
       {/* Liste des liens */}
-      {filteredLinks.length === 0 ? (
+      {links.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <Link2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Aucun lien trouvé</h3>
             <p className="text-muted-foreground mb-4">
-              {links.length === 0 
-                ? "Vous n'avez pas encore créé de liens d'affiliation"
-                : "Aucun lien ne correspond à votre recherche"
-              }
+              Connectez-vous et créez vos premiers liens d'affiliation
             </p>
-            {links.length === 0 && (
-              <Button onClick={() => window.location.href = '/affiliate?tab=products'}>
-                Découvrir les produits
-              </Button>
-            )}
+            <Button onClick={() => window.location.href = '/affiliate?tab=products'}>
+              Découvrir les produits
+            </Button>
           </CardContent>
         </Card>
       ) : (

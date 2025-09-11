@@ -109,9 +109,19 @@ export default function AffiliateProducts() {
 
   const promoteProduct = async (productId: string, productTitle: string) => {
     try {
-      // Pour l'instant, on simule un utilisateur affilié
-      const currentUserId = '00000000-0000-0000-0000-000000000001';
+      // Vérifier si un utilisateur est connecté
+      const { data: { user } } = await supabase.auth.getUser();
       
+      if (!user) {
+        toast({
+          title: "Connexion requise",
+          description: "Vous devez être connecté pour promouvoir des produits",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const currentUserId = user.id;
       console.log('Début promotion produit:', { productId, currentUserId });
       
       // Vérifier si un lien existe déjà pour ce produit et cet affilié
@@ -120,7 +130,7 @@ export default function AffiliateProducts() {
         .select('affiliate_code')
         .eq('affiliate_id', currentUserId)
         .eq('product_id', productId)
-        .maybeSingle(); // Changé de single() à maybeSingle()
+        .maybeSingle();
 
       console.log('Vérification lien existant:', { existingLink, checkError });
 
@@ -143,7 +153,24 @@ export default function AffiliateProducts() {
 
       console.log('Création nouveau lien:', { affiliateCode, promoCode });
 
-      // D'abord, s'assurer qu'un wallet existe pour cet utilisateur
+      // S'assurer qu'un profil existe pour cet utilisateur
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({ 
+          user_id: currentUserId,
+          name: user.email?.split('@')[0] || 'Utilisateur',
+          email: user.email || '',
+          role: 'affiliate'
+        }, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: true 
+        });
+
+      if (profileError) {
+        console.error('Erreur création profil:', profileError);
+      }
+
+      // S'assurer qu'un wallet existe pour cet utilisateur
       const { error: walletError } = await supabase
         .from('wallets')
         .upsert({ 
