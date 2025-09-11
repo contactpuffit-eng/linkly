@@ -38,10 +38,15 @@ interface Order {
   tracking_number: string;
   created_at: string;
   affiliate_code: string;
+  affiliate_id: string;
   products: {
     title: string;
     media_url: string;
     price: number;
+  };
+  affiliate?: {
+    name: string;
+    email: string;
   };
 }
 
@@ -86,8 +91,32 @@ export default function OrdersManagement() {
         !order.products?.vendor_id || order.products.vendor_id === null
       );
 
-      setOrders(vendorOrders);
-      calculateStats(vendorOrders);
+      // Pour chaque commande avec un affilié, récupérer ses informations
+      const ordersWithAffiliateInfo = await Promise.all(
+        vendorOrders.map(async (order) => {
+          if (order.affiliate_id) {
+            try {
+              const { data: affiliate } = await supabase
+                .from('profiles')
+                .select('name, email')
+                .eq('user_id', order.affiliate_id)
+                .single();
+              
+              return {
+                ...order,
+                affiliate: affiliate
+              };
+            } catch (error) {
+              console.error('Erreur récupération affilié:', error);
+              return order;
+            }
+          }
+          return order;
+        })
+      );
+
+      setOrders(ordersWithAffiliateInfo);
+      calculateStats(ordersWithAffiliateInfo);
 
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -339,8 +368,16 @@ export default function OrdersManagement() {
                     {order.commission_amount ? `${order.commission_amount.toLocaleString()} DA` : '0 DA'}
                   </div>
                   {order.affiliate_code && (
-                    <div className="text-sm text-muted-foreground">
-                      Code: {order.affiliate_code}
+                    <div className="space-y-1">
+                      <div className="text-sm text-muted-foreground">
+                        Code: {order.affiliate_code}
+                      </div>
+                      {order.affiliate && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Par:</span>{' '}
+                          <span className="font-medium text-blue-600">{order.affiliate.name}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
