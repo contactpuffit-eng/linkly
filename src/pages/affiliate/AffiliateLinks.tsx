@@ -46,16 +46,14 @@ export default function AffiliateLinks() {
 
   const fetchAffiliateLinks = async () => {
     try {
-      // Vérifier si un utilisateur est connecté
-      const { data: { user } } = await supabase.auth.getUser();
+      // Mode démo - utiliser un utilisateur simulé
+      let currentUserId = '00000000-0000-0000-0000-000000000001';
       
-      if (!user) {
-        setLinks([]);
-        setLoading(false);
-        return;
+      // Essayer de récupérer un utilisateur connecté, sinon utiliser l'utilisateur démo
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        currentUserId = user.id;
       }
-
-      const currentUserId = user.id;
 
       // Récupérer tous les liens d'affiliation de l'utilisateur
       const { data: affiliateProducts, error: linksError } = await supabase

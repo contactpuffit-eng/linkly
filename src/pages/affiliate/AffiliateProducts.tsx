@@ -109,22 +109,18 @@ export default function AffiliateProducts() {
 
   const promoteProduct = async (productId: string, productTitle: string) => {
     try {
-      // Vérifier si un utilisateur est connecté
-      const { data: { user } } = await supabase.auth.getUser();
+      // Mode démo - utiliser un utilisateur simulé
+      let currentUserId = '00000000-0000-0000-0000-000000000001';
       
-      if (!user) {
-        toast({
-          title: "Connexion requise",
-          description: "Vous devez être connecté pour promouvoir des produits",
-          variant: "destructive"
-        });
-        return;
+      // Essayer de récupérer un utilisateur connecté, sinon utiliser l'utilisateur démo
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        currentUserId = user.id;
       }
       
-      const currentUserId = user.id;
-      console.log('Début promotion produit:', { productId, currentUserId });
+      console.log('Début promotion produit (mode démo):', { productId, currentUserId });
       
-      // Vérifier si un lien existe déjà pour ce produit et cet affilié
+      // Vérifier si un lien existe déjà pour ce produit et cet utilisateur
       const { data: existingLink, error: checkError } = await supabase
         .from('affiliate_products')
         .select('affiliate_code')
@@ -134,7 +130,7 @@ export default function AffiliateProducts() {
 
       console.log('Vérification lien existant:', { existingLink, checkError });
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = pas de résultat trouvé
+      if (checkError && checkError.code !== 'PGRST116') {
         console.error('Erreur lors de la vérification:', checkError);
         throw checkError;
       }
@@ -153,40 +149,7 @@ export default function AffiliateProducts() {
 
       console.log('Création nouveau lien:', { affiliateCode, promoCode });
 
-      // S'assurer qu'un profil existe pour cet utilisateur
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({ 
-          user_id: currentUserId,
-          name: user.email?.split('@')[0] || 'Utilisateur',
-          email: user.email || '',
-          role: 'affiliate'
-        }, { 
-          onConflict: 'user_id',
-          ignoreDuplicates: true 
-        });
-
-      if (profileError) {
-        console.error('Erreur création profil:', profileError);
-      }
-
-      // S'assurer qu'un wallet existe pour cet utilisateur
-      const { error: walletError } = await supabase
-        .from('wallets')
-        .upsert({ 
-          user_id: currentUserId,
-          validated_balance: 0,
-          pending_balance: 0,
-          total_earned: 0
-        }, { 
-          onConflict: 'user_id',
-          ignoreDuplicates: true 
-        });
-
-      if (walletError) {
-        console.error('Erreur création wallet:', walletError);
-      }
-
+      // En mode démo, créer directement le lien sans vérifier l'authentification
       const { error: insertError } = await supabase
         .from('affiliate_products')
         .insert({
@@ -199,8 +162,48 @@ export default function AffiliateProducts() {
       console.log('Résultat insertion:', { insertError });
 
       if (insertError) {
-        console.error('Erreur insertion détaillée:', insertError);
-        throw insertError;
+        // Si l'erreur est liée à la clé étrangère, créer d'abord le profil et wallet
+        if (insertError.code === '23503') {
+          console.log('Création automatique du profil et wallet pour le démo...');
+          
+          // Créer le profil démo
+          await supabase
+            .from('profiles')
+            .insert({
+              user_id: currentUserId,
+              name: 'Utilisateur Démo',
+              email: 'demo@example.com',
+              role: 'affiliate'
+            })
+            .select()
+            .single();
+          
+          // Créer le wallet démo
+          await supabase
+            .from('wallets')
+            .insert({
+              user_id: currentUserId,
+              validated_balance: 0,
+              pending_balance: 0,
+              total_earned: 0
+            });
+          
+          // Réessayer la création du lien d'affiliation
+          const { error: retryError } = await supabase
+            .from('affiliate_products')
+            .insert({
+              affiliate_id: currentUserId,
+              product_id: productId,
+              affiliate_code: affiliateCode,
+              promo_code: promoCode
+            });
+          
+          if (retryError) {
+            throw retryError;
+          }
+        } else {
+          throw insertError;
+        }
       }
 
       toast({
