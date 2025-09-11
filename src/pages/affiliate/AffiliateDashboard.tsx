@@ -3,6 +3,7 @@ import { AffiliateTabs } from '@/components/affiliate/AffiliateTabs';
 import AffiliateOverview from './AffiliateOverview';
 import AffiliateProducts from './AffiliateProducts';
 import AffiliateLinks from './AffiliateLinks';
+import AffiliatePageManager from './AffiliatePageManager';
 
 const AffiliateDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -16,12 +17,7 @@ const AffiliateDashboard = () => {
       case 'links':
         return <AffiliateLinks />;
       case 'page':
-        return (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Ma Page</h2>
-            <p className="text-muted-foreground">Page landing personnalisée (en développement)</p>
-          </div>
-        );
+        return <AffiliatePageManager />;
       case 'wallet':
         return (
           <div className="text-center py-20">

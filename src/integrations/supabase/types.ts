@@ -62,6 +62,48 @@ export type Database = {
           },
         ]
       }
+      affiliate_pages: {
+        Row: {
+          affiliate_id: string
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          id: string
+          is_published: boolean | null
+          social_links: Json | null
+          theme_color: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          affiliate_id: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          is_published?: boolean | null
+          social_links?: Json | null
+          theme_color?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          affiliate_id?: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_published?: boolean | null
+          social_links?: Json | null
+          theme_color?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       affiliate_products: {
         Row: {
           affiliate_code: string
@@ -605,6 +647,10 @@ export type Database = {
       }
       generate_affiliate_code: {
         Args: { affiliate_uuid: string; product_uuid: string }
+        Returns: string
+      }
+      generate_affiliate_username: {
+        Args: { base_name: string }
         Returns: string
       }
       generate_promo_code: {

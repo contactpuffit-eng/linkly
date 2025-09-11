@@ -18,7 +18,7 @@ import CommissionManagement from "./pages/vendor/CommissionManagement";
 import MyLandingPages from "./pages/vendor/MyLandingPages";
 import LandingPageView from "./pages/LandingPageView";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
-import AffiliateLinkInBio from "./pages/AffiliateLinkInBio";
+import PublicAffiliatePage from "./pages/PublicAffiliatePage";
 import LandingPage from "./pages/LandingPage";
 import OrderPage from "./pages/OrderPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
@@ -39,7 +39,7 @@ const App = () => (
           {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/@:username" element={<AffiliateLinkInBio />} />
+          <Route path="/@:username" element={<PublicAffiliatePage />} />
           <Route path="/p/:slug" element={<LandingPage />} />
           <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/order/:productId" element={<OrderPage />} />
