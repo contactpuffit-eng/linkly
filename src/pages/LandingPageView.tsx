@@ -119,8 +119,10 @@ export default function LandingPageView() {
   const mediaArray = Array.isArray(media_urls) ? media_urls : [];
   const coverImage = mediaArray.find(img => img.isCover) || mediaArray[0];
   
-  // Utiliser l'image du produit si pas d'image dans media_urls
-  const displayImage = coverImage || (productImage ? { url: productImage, alt: customization.productName } : null);
+  // Prioriser l'image du produit actuel pour éviter les images obsolètes
+  const displayImage = productImage 
+    ? { url: productImage, alt: customization.productName }
+    : coverImage;
 
   return (
     <div className="min-h-screen bg-background">
