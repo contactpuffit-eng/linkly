@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AffiliateTabs } from '@/components/affiliate/AffiliateTabs';
 import AffiliateOverview from './AffiliateOverview';
 import AffiliateProducts from './AffiliateProducts';
+import AffiliateLinks from './AffiliateLinks';
 
 const AffiliateDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -13,12 +14,7 @@ const AffiliateDashboard = () => {
       case 'products':
         return <AffiliateProducts />;
       case 'links':
-        return (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Mes Liens</h2>
-            <p className="text-muted-foreground">Gestion de vos liens d'affiliation (en développement)</p>
-          </div>
-        );
+        return <AffiliateLinks />;
       case 'page':
         return (
           <div className="text-center py-20">

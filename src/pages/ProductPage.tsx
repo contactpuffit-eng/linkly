@@ -28,8 +28,38 @@ export default function ProductPage() {
   useEffect(() => {
     if (id) {
       fetchProduct();
+      // Enregistrer le clic si c'est un lien d'affiliation
+      if (affiliateCode) {
+        recordClick();
+      }
     }
-  }, [id]);
+  }, [id, affiliateCode]);
+
+  const recordClick = async () => {
+    try {
+      // Récupérer l'ID de l'affilié depuis le code
+      const { data: affiliateProduct } = await supabase
+        .from('affiliate_products')
+        .select('affiliate_id')
+        .eq('affiliate_code', affiliateCode)
+        .single();
+
+      if (affiliateProduct && id) {
+        await supabase
+          .from('affiliate_link_stats')
+          .insert({
+            affiliate_id: affiliateProduct.affiliate_id,
+            product_id: id,
+            affiliate_code: affiliateCode,
+            event_type: 'click',
+            user_ip: null,
+            user_agent: navigator.userAgent
+          });
+      }
+    } catch (error) {
+      console.error('Erreur enregistrement clic:', error);
+    }
+  };
 
   const fetchProduct = async () => {
     try {

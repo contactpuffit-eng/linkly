@@ -67,10 +67,45 @@ export default function AffiliateProducts() {
 
   const generateAffiliateLink = async (productId: string) => {
     const baseUrl = window.location.origin;
-    const affiliateCode = `AFF_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
     
-    // Diriger vers la page produit avec le code d'affiliation
-    return `${baseUrl}/product/${productId}?ref=${affiliateCode}`;
+    // Pour l'instant, on simule un utilisateur affilié
+    const currentUserId = '00000000-0000-0000-0000-000000000001';
+    
+    try {
+      // Vérifier si un lien existe déjà pour ce produit et cet affilié
+      const { data: existingLink } = await supabase
+        .from('affiliate_products')
+        .select('affiliate_code')
+        .eq('affiliate_id', currentUserId)
+        .eq('product_id', productId)
+        .single();
+
+      if (existingLink) {
+        return `${baseUrl}/product/${productId}?ref=${existingLink.affiliate_code}`;
+      }
+
+      // Créer un nouveau lien d'affiliation
+      const affiliateCode = `AFF_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+      const promoCode = `PROMO_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+      const { error } = await supabase
+        .from('affiliate_products')
+        .insert({
+          affiliate_id: currentUserId,
+          product_id: productId,
+          affiliate_code: affiliateCode,
+          promo_code: promoCode
+        });
+
+      if (error) throw error;
+
+      return `${baseUrl}/product/${productId}?ref=${affiliateCode}`;
+    } catch (error) {
+      console.error('Erreur génération lien:', error);
+      // Fallback
+      const affiliateCode = `AFF_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+      return `${baseUrl}/product/${productId}?ref=${affiliateCode}`;
+    }
   };
 
   const copyAffiliateLink = async (productId: string, productTitle: string) => {
