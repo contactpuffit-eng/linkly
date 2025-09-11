@@ -72,11 +72,22 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
 
   const handlePublishLanding = async () => {
     try {
+      // Vérifier l'authentification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentification requise",
+          description: "Vous devez être connecté pour publier une landing page",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Générer un slug unique
       const { data: slugData, error: slugError } = await supabase
         .rpc('generate_unique_slug', {
           title_text: customization.productName,
-          vendor_uuid: 'vendor-id' // TODO: Remplacer par l'ID du vendeur authentifié
+          vendor_uuid: user.id
         });
 
       if (slugError) throw slugError;
@@ -85,7 +96,7 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
       const { data, error } = await supabase
         .from('landing_pages')
         .insert({
-          vendor_id: 'vendor-id', // TODO: Remplacer par l'ID du vendeur authentifié
+          vendor_id: user.id,
           product_id: selectedProduct.id,
           title: customization.productName,
           slug: slugData,
