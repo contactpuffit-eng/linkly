@@ -65,14 +65,28 @@ export default function AffiliateProducts() {
     }
   };
 
-  const generateAffiliateLink = (productId: string) => {
+  const generateAffiliateLink = async (productId: string) => {
     const baseUrl = window.location.origin;
     const affiliateCode = `AFF_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+    
+    // Chercher la landing page associée au produit
+    const { data: landingPage } = await supabase
+      .from('landing_pages')
+      .select('slug')
+      .eq('product_id', productId)
+      .eq('is_published', true)
+      .single();
+    
+    if (landingPage?.slug) {
+      return `${baseUrl}/p/${landingPage.slug}?ref=${affiliateCode}`;
+    }
+    
+    // Fallback vers la page de commande si pas de landing page
     return `${baseUrl}/order/${productId}?ref=${affiliateCode}`;
   };
 
-  const copyAffiliateLink = (productId: string, productTitle: string) => {
-    const link = generateAffiliateLink(productId);
+  const copyAffiliateLink = async (productId: string, productTitle: string) => {
+    const link = await generateAffiliateLink(productId);
     navigator.clipboard.writeText(link);
     toast({
       title: "Lien copié !",
@@ -245,7 +259,10 @@ export default function AffiliateProducts() {
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => window.open(`/order/${product.id}`, '_blank')}
+                      onClick={async () => {
+                        const link = await generateAffiliateLink(product.id);
+                        window.open(link, '_blank');
+                      }}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Voir

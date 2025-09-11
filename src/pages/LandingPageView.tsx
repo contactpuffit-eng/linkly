@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -27,6 +27,8 @@ interface LandingPage {
 
 export default function LandingPageView() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const affiliateCode = searchParams.get('ref');
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,8 +88,9 @@ export default function LandingPageView() {
         .update({ conversions_count: (landingPage.customization.conversions_count || 0) + 1 })
         .eq('id', landingPage.id);
 
-      // Rediriger vers la page de commande
-      window.location.href = `/order/${landingPage.product_id}`;
+      // Rediriger vers la page de commande avec le code d'affiliation
+      const orderUrl = `/order/${landingPage.product_id}${affiliateCode ? `?ref=${affiliateCode}` : ''}`;
+      window.location.href = orderUrl;
     } catch (error) {
       console.error('Error handling order:', error);
     }
