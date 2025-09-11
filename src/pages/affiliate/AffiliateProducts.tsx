@@ -112,13 +112,22 @@ export default function AffiliateProducts() {
       // Pour l'instant, on simule un utilisateur affilié
       const currentUserId = '00000000-0000-0000-0000-000000000001';
       
+      console.log('Début promotion produit:', { productId, currentUserId });
+      
       // Vérifier si un lien existe déjà pour ce produit et cet affilié
-      const { data: existingLink } = await supabase
+      const { data: existingLink, error: checkError } = await supabase
         .from('affiliate_products')
         .select('affiliate_code')
         .eq('affiliate_id', currentUserId)
         .eq('product_id', productId)
-        .single();
+        .maybeSingle(); // Changé de single() à maybeSingle()
+
+      console.log('Vérification lien existant:', { existingLink, checkError });
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = pas de résultat trouvé
+        console.error('Erreur lors de la vérification:', checkError);
+        throw checkError;
+      }
 
       if (existingLink) {
         toast({
@@ -132,7 +141,26 @@ export default function AffiliateProducts() {
       const affiliateCode = `AFF_${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
       const promoCode = `PROMO_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
-      const { error } = await supabase
+      console.log('Création nouveau lien:', { affiliateCode, promoCode });
+
+      // D'abord, s'assurer qu'un wallet existe pour cet utilisateur
+      const { error: walletError } = await supabase
+        .from('wallets')
+        .upsert({ 
+          user_id: currentUserId,
+          validated_balance: 0,
+          pending_balance: 0,
+          total_earned: 0
+        }, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: true 
+        });
+
+      if (walletError) {
+        console.error('Erreur création wallet:', walletError);
+      }
+
+      const { error: insertError } = await supabase
         .from('affiliate_products')
         .insert({
           affiliate_id: currentUserId,
@@ -141,7 +169,12 @@ export default function AffiliateProducts() {
           promo_code: promoCode
         });
 
-      if (error) throw error;
+      console.log('Résultat insertion:', { insertError });
+
+      if (insertError) {
+        console.error('Erreur insertion détaillée:', insertError);
+        throw insertError;
+      }
 
       toast({
         title: "Produit ajouté !",
@@ -149,10 +182,10 @@ export default function AffiliateProducts() {
       });
 
     } catch (error) {
-      console.error('Erreur promotion produit:', error);
+      console.error('Erreur complète promotion produit:', error);
       toast({
         title: "Erreur",
-        description: "Impossible d'ajouter ce produit à vos liens",
+        description: `Impossible d'ajouter ce produit à vos liens: ${error.message || 'Erreur inconnue'}`,
         variant: "destructive"
       });
     }
