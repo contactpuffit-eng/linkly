@@ -49,14 +49,18 @@ export default function VendorProducts() {
 
   const fetchProducts = async () => {
     try {
-      // Fetch all products without auth requirement
+      // Charger tous les produits pour les tests
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur détaillée:', error);
+        throw error;
+      }
+      
+      console.log('Produits chargés:', data);
       setProducts(data || []);
     } catch (error) {
       console.error('Erreur chargement produits:', error);
