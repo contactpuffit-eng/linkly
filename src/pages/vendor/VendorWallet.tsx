@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 const VendorWallet = () => {
-  const [balance, setBalance] = useState(2450.75);
+  const [balance, setBalance] = useState(245075);
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -27,7 +27,7 @@ const VendorWallet = () => {
     {
       id: 1,
       type: 'deposit',
-      amount: 500,
+      amount: 50000,
       description: 'Ajout de fonds',
       date: new Date('2024-01-15'),
       status: 'completed'
@@ -35,7 +35,7 @@ const VendorWallet = () => {
     {
       id: 2,
       type: 'commission',
-      amount: 125.50,
+      amount: 12550,
       description: 'Commission vente produit #123',
       date: new Date('2024-01-14'),
       status: 'completed'
@@ -43,7 +43,7 @@ const VendorWallet = () => {
     {
       id: 3,
       type: 'withdrawal',
-      amount: -200,
+      amount: -20000,
       description: 'Retrait vers compte bancaire',
       date: new Date('2024-01-13'),
       status: 'pending'
@@ -71,7 +71,7 @@ const VendorWallet = () => {
       
       toast({
         title: "Fonds ajoutés !",
-        description: `${addAmount.toFixed(2)} € ont été ajoutés à votre portefeuille`,
+        description: `${addAmount.toFixed(0)} DA ont été ajoutés à votre portefeuille`,
       });
     }, 1000);
   };
@@ -116,7 +116,7 @@ const VendorWallet = () => {
         </CardHeader>
         <CardContent>
           <div className="text-4xl font-bold text-primary mb-4">
-            {balance.toFixed(2)} €
+            {balance.toLocaleString('fr-DZ')} DA
           </div>
           <div className="flex gap-4">
             <Button size="sm" variant="outline">
@@ -145,15 +145,15 @@ const VendorWallet = () => {
         <CardContent className="space-y-4">
           <div className="flex gap-4">
             <div className="flex-1">
-              <Label htmlFor="amount">Montant (€)</Label>
+              <Label htmlFor="amount">Montant (DA)</Label>
               <Input
                 id="amount"
                 type="number"
-                placeholder="100.00"
+                placeholder="10000"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 min="0"
-                step="0.01"
+                step="1"
               />
             </div>
             <div className="flex items-end">
@@ -170,14 +170,14 @@ const VendorWallet = () => {
           {/* Quick amounts */}
           <div className="flex gap-2">
             <span className="text-sm text-muted-foreground self-center">Montants rapides:</span>
-            {[50, 100, 250, 500].map((quickAmount) => (
+            {[5000, 10000, 25000, 50000].map((quickAmount) => (
               <Button
                 key={quickAmount}
                 variant="outline"
                 size="sm"
                 onClick={() => setAmount(quickAmount.toString())}
               >
-                {quickAmount}€
+                {quickAmount.toLocaleString('fr-DZ')} DA
               </Button>
             ))}
           </div>
@@ -213,7 +213,7 @@ const VendorWallet = () => {
                     <span className={`font-medium ${
                       transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.amount > 0 ? '+' : ''}{transaction.amount.toFixed(2)} €
+                      {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount).toLocaleString('fr-DZ')} DA
                     </span>
                     {getStatusBadge(transaction.status)}
                   </div>
