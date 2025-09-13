@@ -73,14 +73,27 @@ export const CustomizeStep = ({ selectedProduct, selectedTheme, onNext, onBack }
 
       if (error) throw error;
 
-      setFormData(prev => ({
-        ...prev,
-        aiData: data,
-        productName: data.extracted.title || prev.productName,
-        description: data.extracted.description || prev.description,
-        price: data.extracted.price?.toString() || prev.price,
-        aiImages: data.extracted.images || []
-      }));
+      setFormData(prev => {
+        const aiImages = data.extracted.images || [];
+        const selectedFromAI = prev.selectedMedia.length === 0
+          ? aiImages.map((img: any, idx: number) => ({
+              url: img.url,
+              alt: img.alt || `Image IA ${idx + 1}`,
+              source: 'ai',
+              isCover: idx === 0,
+            }))
+          : prev.selectedMedia;
+
+        return {
+          ...prev,
+          aiData: data,
+          productName: data.extracted.title || prev.productName,
+          description: data.extracted.description || prev.description,
+          price: data.extracted.price?.toString() || prev.price,
+          aiImages,
+          selectedMedia: selectedFromAI,
+        };
+      });
       
       setShowAIImport(true);
     } catch (error) {
@@ -93,13 +106,23 @@ export const CustomizeStep = ({ selectedProduct, selectedTheme, onNext, onBack }
   const handleAIAccept = (field?: string) => {
     if (formData.aiData) {
       const { extracted, ai_generated } = formData.aiData;
+      const aiImages = extracted.images || formData.aiImages || [];
+      const selectedFromAI = formData.selectedMedia.length === 0
+        ? aiImages.map((img: any, idx: number) => ({
+            url: img.url,
+            alt: img.alt || `Image IA ${idx + 1}`,
+            source: 'ai',
+            isCover: idx === 0,
+          }))
+        : formData.selectedMedia;
       
       setFormData(prev => ({
         ...prev,
         productName: extracted.title || prev.productName,
         description: extracted.description || prev.description,
         price: extracted.price?.toString() || prev.price,
-        aiImages: extracted.images || prev.aiImages,
+        aiImages,
+        selectedMedia: selectedFromAI,
         targetAudience: ai_generated.category_suggestion || prev.targetAudience,
         mainBenefit: ai_generated.bullet_benefits?.[0] || prev.mainBenefit
       }));

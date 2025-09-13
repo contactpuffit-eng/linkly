@@ -104,7 +104,9 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
           theme_id: selectedTheme,
           customization: customization,
           ai_data: customization.aiData,
-          media_urls: customization.selectedMedia || [],
+          media_urls: (customization.selectedMedia && customization.selectedMedia.length > 0)
+            ? customization.selectedMedia
+            : (customization.aiImages || []),
           is_published: true
         })
         .select()
