@@ -16,6 +16,7 @@ import StockManagement from "./pages/vendor/StockManagement";
 import ShippingSettings from "./pages/vendor/ShippingSettings";
 import CommissionManagement from "./pages/vendor/CommissionManagement";
 import MyLandingPages from "./pages/vendor/MyLandingPages";
+import VendorWallet from "./pages/vendor/VendorWallet";
 import LandingPageView from "./pages/LandingPageView";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import PublicAffiliatePage from "./pages/PublicAffiliatePage";
@@ -58,6 +59,11 @@ const App = () => (
           <Route path="/vendor/products" element={
             <VendorLayout>
               <ProductCatalog />
+            </VendorLayout>
+          } />
+          <Route path="/vendor/wallet" element={
+            <VendorLayout>
+              <VendorWallet />
             </VendorLayout>
           } />
           <Route path="/vendor/ai-landing" element={
