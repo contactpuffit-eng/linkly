@@ -80,6 +80,17 @@ export default function AffiliateProducts() {
         .single();
 
       if (existingLink) {
+        // Récupérer la landing page pour ce produit
+        const { data: landingPage } = await supabase
+          .from('landing_pages')
+          .select('slug')
+          .eq('product_id', productId)
+          .eq('is_published', true)
+          .single();
+        
+        if (landingPage?.slug) {
+          return `${baseUrl}/landing/${landingPage.slug}?ref=${existingLink.affiliate_code}`;
+        }
         return `${baseUrl}/product/${productId}?ref=${existingLink.affiliate_code}`;
       }
 
@@ -98,6 +109,17 @@ export default function AffiliateProducts() {
 
       if (error) throw error;
 
+      // Récupérer la landing page pour ce produit
+      const { data: landingPage } = await supabase
+        .from('landing_pages')
+        .select('slug')
+        .eq('product_id', productId)
+        .eq('is_published', true)
+        .single();
+      
+      if (landingPage?.slug) {
+        return `${baseUrl}/landing/${landingPage.slug}?ref=${affiliateCode}`;
+      }
       return `${baseUrl}/product/${productId}?ref=${affiliateCode}`;
     } catch (error) {
       console.error('Erreur génération lien:', error);

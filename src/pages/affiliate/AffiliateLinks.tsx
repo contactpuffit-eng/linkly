@@ -27,6 +27,10 @@ interface AffiliateLink {
     commission_pct: number;
     media_url: string;
   };
+  landing_page?: {
+    slug: string;
+    is_published: boolean;
+  } | null;
   stats: {
     clicks: number;
     orders: number;
@@ -66,7 +70,7 @@ export default function AffiliateLinks() {
 
       if (linksError) throw linksError;
 
-      // Pour chaque lien, récupérer les statistiques
+      // Pour chaque lien, récupérer les statistiques et la landing page
       const linksWithStats = await Promise.all(
         (affiliateProducts || []).map(async (link) => {
           // Compter les clics
@@ -82,11 +86,20 @@ export default function AffiliateLinks() {
             .select('commission_amount')
             .eq('affiliate_code', link.affiliate_code);
 
+          // Récupérer la landing page publiée pour ce produit
+          const { data: landingPage } = await supabase
+            .from('landing_pages')
+            .select('slug, is_published')
+            .eq('product_id', link.product_id)
+            .eq('is_published', true)
+            .single();
+
           const orderCount = orders?.length || 0;
           const totalCommission = orders?.reduce((sum, order) => sum + (order.commission_amount || 0), 0) || 0;
 
           return {
             ...link,
+            landing_page: landingPage || null,
             stats: {
               clicks: clicks || 0,
               orders: orderCount,
@@ -109,13 +122,18 @@ export default function AffiliateLinks() {
     }
   };
 
-  const generateFullLink = (affiliateCode: string, productId: string) => {
+  const generateFullLink = (affiliateCode: string, productId: string, landingSlug?: string) => {
     const baseUrl = window.location.origin;
+    // Si une landing page existe pour ce produit, utiliser son slug
+    if (landingSlug) {
+      return `${baseUrl}/landing/${landingSlug}?ref=${affiliateCode}`;
+    }
+    // Sinon, utiliser la page produit générique
     return `${baseUrl}/product/${productId}?ref=${affiliateCode}`;
   };
 
-  const copyLink = (affiliateCode: string, productId: string, productTitle: string) => {
-    const link = generateFullLink(affiliateCode, productId);
+  const copyLink = (affiliateCode: string, productId: string, productTitle: string, landingSlug?: string) => {
+    const link = generateFullLink(affiliateCode, productId, landingSlug);
     navigator.clipboard.writeText(link);
     toast({
       title: "Lien copié !",
@@ -296,7 +314,7 @@ export default function AffiliateLinks() {
                     {/* Actions */}
                     <div className="flex gap-2">
                       <Button 
-                        onClick={() => copyLink(link.affiliate_code, link.product_id, link.product.title)}
+                        onClick={() => copyLink(link.affiliate_code, link.product_id, link.product.title, link.landing_page?.slug)}
                         className="flex-1 bg-gradient-primary hover:opacity-90"
                         size="sm"
                       >
@@ -306,7 +324,7 @@ export default function AffiliateLinks() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => window.open(generateFullLink(link.affiliate_code, link.product_id), '_blank')}
+                        onClick={() => window.open(generateFullLink(link.affiliate_code, link.product_id, link.landing_page?.slug), '_blank')}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Prévisualiser
