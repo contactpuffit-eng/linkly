@@ -32,6 +32,7 @@ export default function LandingPageView() {
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mainImageError, setMainImageError] = useState(false);
 
   useEffect(() => {
     if (slug) {
@@ -117,10 +118,12 @@ export default function LandingPageView() {
 
   const { customization, media_urls } = landingPage;
   const mediaArray = Array.isArray(media_urls) ? media_urls : [];
-  const coverImage = mediaArray.find(img => img.isCover) || mediaArray[0];
+  const sanitizedMedia = mediaArray.filter((img: any) => img && typeof img.url === 'string' && img.url.startsWith('https://'));
+  const coverImage = sanitizedMedia.find((img: any) => img.isCover) || sanitizedMedia[0];
   
   // Prioriser l'image du produit actuel pour éviter les images obsolètes
-  const displayImage = productImage 
+  const useProductImage = productImage && productImage.startsWith('https://');
+  const displayImage = useProductImage 
     ? { url: productImage, alt: customization.productName }
     : coverImage;
 
@@ -163,11 +166,12 @@ export default function LandingPageView() {
             {/* Main Image */}
             <div className="space-y-6">
               <div className="aspect-square bg-white rounded-2xl shadow-2xl overflow-hidden">
-                {displayImage ? (
+                {displayImage && !mainImageError ? (
                   <img 
                     src={displayImage.url} 
                     alt={displayImage.alt}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                    onError={() => setMainImageError(true)}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -180,9 +184,9 @@ export default function LandingPageView() {
               </div>
               
               {/* Image Thumbnails */}
-              {mediaArray.length > 1 && (
+              {sanitizedMedia.length > 1 && (
                 <div className="grid grid-cols-4 gap-3">
-                  {mediaArray.slice(0, 4).map((img: any, idx: number) => (
+                  {sanitizedMedia.slice(0, 4).map((img: any, idx: number) => (
                     <div key={idx} className="aspect-square bg-white rounded-xl shadow-lg overflow-hidden">
                       <img 
                         src={img.url} 

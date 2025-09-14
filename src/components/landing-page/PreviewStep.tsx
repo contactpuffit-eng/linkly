@@ -93,6 +93,25 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
 
       if (slugError) throw slugError;
 
+      // Préparer les médias à sauvegarder (https uniquement)
+      const baseMedia = (customization.selectedMedia && customization.selectedMedia.length > 0)
+        ? customization.selectedMedia
+        : (customization.aiImages || []);
+      let mediaToSave = baseMedia.map((img: any, idx: number) => ({
+        url: img.url,
+        alt: img.alt || `Image ${idx + 1}`,
+        isCover: idx === 0 || img.isCover,
+        source: img.source || 'ai'
+      })).filter((img: any) => typeof img.url === 'string' && img.url.startsWith('https://'));
+      if (mediaToSave.length === 0 && selectedProduct.media_url && selectedProduct.media_url.startsWith('https://')) {
+        mediaToSave = [{
+          url: selectedProduct.media_url,
+          alt: selectedProduct.title || customization.productName || 'Produit',
+          isCover: true,
+          source: 'product'
+        }];
+      }
+
       // Sauvegarder la landing page
       const { data, error } = await supabase
         .from('landing_pages')
@@ -104,9 +123,7 @@ export const PreviewStep = ({ selectedProduct, selectedTheme, customization, onB
           theme_id: selectedTheme,
           customization: customization,
           ai_data: customization.aiData,
-          media_urls: (customization.selectedMedia && customization.selectedMedia.length > 0)
-            ? customization.selectedMedia
-            : (customization.aiImages || []),
+          media_urls: mediaToSave,
           is_published: true
         })
         .select()
