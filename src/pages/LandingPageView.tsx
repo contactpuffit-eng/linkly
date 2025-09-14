@@ -33,6 +33,7 @@ export default function LandingPageView() {
   const [productImage, setProductImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [mainImageError, setMainImageError] = useState(false);
+  const [fallbackError, setFallbackError] = useState(false);
 
   useEffect(() => {
     if (slug) {
@@ -123,9 +124,13 @@ export default function LandingPageView() {
   
   // Prioriser l'image du produit actuel pour éviter les images obsolètes
   const useProductImage = productImage && productImage.startsWith('https://');
-  const displayImage = useProductImage 
-    ? { url: productImage, alt: customization.productName }
-    : coverImage;
+  const initialDisplayImage = coverImage 
+    ? { url: coverImage.url, alt: coverImage.alt || customization.productName }
+    : (useProductImage ? { url: productImage, alt: customization.productName } : null);
+  const initialSource: 'cover' | 'product' | null = coverImage ? 'cover' : (useProductImage ? 'product' : null);
+  const fallbackImage = initialSource === 'cover'
+    ? (useProductImage ? { url: productImage, alt: customization.productName } : null)
+    : (coverImage ? { url: coverImage.url, alt: coverImage.alt || customization.productName } : null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,12 +171,19 @@ export default function LandingPageView() {
             {/* Main Image */}
             <div className="space-y-6">
               <div className="aspect-square bg-white rounded-2xl shadow-2xl overflow-hidden">
-                {displayImage && !mainImageError ? (
+                {initialDisplayImage && !mainImageError ? (
                   <img 
-                    src={displayImage.url} 
-                    alt={displayImage.alt}
+                    src={initialDisplayImage.url} 
+                    alt={initialDisplayImage.alt}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                     onError={() => setMainImageError(true)}
+                  />
+                ) : fallbackImage && !fallbackError ? (
+                  <img
+                    src={fallbackImage.url}
+                    alt={fallbackImage.alt}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                    onError={() => setFallbackError(true)}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
